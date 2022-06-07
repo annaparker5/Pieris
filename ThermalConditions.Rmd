@@ -1,0 +1,15 @@
+---
+title: "Choosing Thermal Conditions"
+output: html_notebook
+---
+
+This script will let us look at different potential thermal conditions for round 2 of the Pieris experiment. 
+
+
+
+# 0. Load in the packages and data
+
+# 1. Clean the data 
+
+# 2. Graph
+
