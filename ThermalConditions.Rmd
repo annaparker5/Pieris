@@ -9,7 +9,127 @@ This script will let us look at different potential thermal conditions for round
 
 # 0. Load in the packages and data
 
+```{r}
+library(ggplot2)
+library(lubridate)
+```
+
+```{r}
+spring <- read.csv("~/Desktop/GitHub/Pieris/Data/Apr1toMay31.csv", header = FALSE)
+summer <- read.csv("~/Desktop/GitHub/Pieris/Data/July1toAug31.csv", header = FALSE)
+```
+
+
 # 1. Clean the data 
 
+##  Subset to get one measurement per hour
+
+```{r}
+spring <- spring[spring$V7 == 0, ]
+
+summer <- summer[summer$V7 ==  0,  ]
+```
+
+## Add new column to make an X axis 
+
+```{r}
+spring$hour <- 1:1464
+summer$hour <- 1:1488
+
+spring$day <- spring$hour / 24
+summer$day <- summer$hour / 24
+
+```
+
 # 2. Graph
+
+```{r}
+springgraph <- ggplot(data =  spring, aes(x = day, y = V1)) + 
+  theme_bw() + 
+  geom_line() + 
+  ylim(0, 40) + 
+  labs(x = "Day", y = "Temperature (C)")
+
+springgraph
+
+ggsave("~/Desktop/GitHub/Pieris/Figures/springgraph.png", springgraph, width = 8, height = 5)
+```
+
+```{r}
+ggplot(data =  spring, aes(x = V1)) + 
+  geom_histogram() + 
+  theme_bw()
+```
+
+```{r}
+ggplot(data =  summer, aes(x = V1)) + 
+  geom_histogram() + 
+  theme_bw()
+```
+
+
+
+```{r}
+summergraph <- ggplot(data =  summer, aes(x = day, y = V1)) + 
+  theme_bw() + 
+  geom_line() + 
+  ylim(0, 40) + 
+  labs(x = "Day", y = "Temperature (C)")
+
+summergraph
+```
+
+
+
+```{r}
+rdu <- read.csv("~/Desktop/GitHub/Pieris/Data/rduairport.csv", header = TRUE)
+rdu$time <- 1:3068
+
+rdu$TmaxC <- (rdu$TMAX - 32) * (5/9)
+rdu$TminC <- (rdu$TMIN - 32) * (5/9)
+
+```
+
+
+```{r}
+ggplot(data = rdu, aes(x = time, y = TmeanC)) + 
+  geom_line() + 
+  theme_bw()
+```
+
+```{r}
+rdu$DATE <- as.Date(rdu$DATE, format = "%m/%d/%Y")
+
+rdu2018 <- rdu[rdu$DATE >= "2018-01-01", ]
+rdu2018 <- rdu2018[rdu2018$DATE <= "2018-12-31", ]
+```
+
+```{r}
+rduapril <- rdu[rdu$DATE >= "2020-04-01", ]
+rduapril <- rduapril[rduapril$DATE <= "2020-04-30", ]
+```
+
+```{r}
+rduaugust <- rdu[rdu$DATE >= "2020-08-01", ]
+rduaugust <- rduaugust[rduaugust$DATE <= "2020-08-31", ]
+```
+
+
+
+```{r}
+ggplot(data = rduapril, aes(x = time)) + 
+  geom_line(aes(y = TmeanC), color = "black") + 
+  geom_line(aes(y = TmaxC), color  = "red") + 
+  geom_line(aes(y = TminC), color = "blue") + 
+  theme_bw()
+```
+
+
+```{r}
+ggplot(data = rduaugust, aes(x = time)) + 
+  geom_line(aes(y = TmeanC), color = "black") + 
+  geom_line(aes(y = TmaxC), color  = "red") + 
+  geom_line(aes(y = TminC), color = "blue") + 
+  theme_bw()
+```
 
