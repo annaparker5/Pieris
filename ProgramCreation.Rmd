@@ -1,0 +1,184 @@
+---
+title: "Program Creation"
+output: html_notebook
+---
+
+This document creates the file necessary for running the program on the chamber for the April 2020 and August 2020 weather patterns. 
+
+
+# 0. Load in packages and data
+
+```{r}
+library(lubridate)
+library(ggplot2)
+```
+
+```{r}
+rdu <- read.csv("~/Desktop/GitHub/Pieris/Data/rduairport.csv", header = TRUE)
+```
+
+# 1. Clean the data
+
+```{r}
+rdu$time <- 1:3068
+
+rdu$TmaxC <- (rdu$TMAX - 32) * (5/9)
+rdu$TminC <- (rdu$TMIN - 32) * (5/9)
+
+rdu$DATE <- as.Date(rdu$DATE, format = "%m/%d/%Y")
+```
+
+Make two separate datafiles
+
+```{r}
+rduapril <- rdu[rdu$DATE >= "2020-04-01", ]
+rduapril <- rduapril[rduapril$DATE <= "2020-04-30", ]
+
+#Add an extra row in so the r code doesn't break
+
+rduapril[31, ] <- rduapril[30,]
+rduapril[31, 14] <- 11.666
+
+rduapril$day <- 1:31
+```
+
+```{r}
+rduaugust <- rdu[rdu$DATE >= "2020-08-01", ]
+rduaugust <- rduaugust[rduaugust$DATE <= "2020-08-31", ]
+
+#Add an extra row in so the r code doesn't break
+
+rduaugust[32, ] <- rduaugust[31,]
+rduaugust[32, 14] <- 22.77
+
+rduaugust$day <- 1:32
+
+
+```
+
+# 2. Make the for loop 
+
+**Starting the for loop at 2 am** 
+
+## APRIL
+
+### 0. Make the empty dataset 
+
+```{r}
+minute <- 1:(60*24)
+
+aprilday <- 1:30
+
+sequence <- 1:(30*1440)
+april <- as.data.frame(sequence)
+april$day <- rep(1:30, each = 1440)
+april$minute <- minute
+april$temp <- 0
+
+finalapr <- data.frame(sequence = integer(),
+                    day = integer(), 
+                    minute = integer(), 
+                    temp = numeric())
+
+```
+
+
+### 1. Figure out minute demarcations
+
+```{r}
+#2:01 am-4am: 1 to 120
+120 + (10*60) #121 to 720: 4:01 am - 2 pm
+720 + 120 # 721 to 840: 2:01 pm - 4 pm
+840 + (10*60) # 841 to 1440 - 4:01 pm to 2 am
+
+```
+
+### 2. Make the for loop
+
+```{r}
+for (i in 1:length(unique(april$day))) {
+  subset <-  april[april$day == i, ]
+  for (j in 1:length(unique(subset$minute))) {
+    if (j >= 1 & j <= 120){
+      subset[j, 4] <- rduapril[rduapril$day == i, 14]
+    } else if (j >= 121 & j <= 720){
+      positionup <- seq((rduapril[rduapril$day == i, 14]), (rduapril[rduapril$day == i, 13]), length = 600)
+      positionup <- as.data.frame(positionup)
+      positionup$up <- 121:720
+      subset[j, 4] <- positionup[positionup$up == j, 1] 
+      } else if (j >= 721 & j <= 840) {
+          subset[j, 4] <- rduapril[rduapril$day == i, 13]
+        } else if (j >= 841 & j <= 1440) {
+          positiondown <- seq((rduapril[rduapril$day == i, 13]), (rduapril[rduapril$day == (i+1), 14]), length = 600)
+          positiondown <- as.data.frame(positiondown)
+          positiondown$down <- 841:1440
+          subset[j, 4] <- positiondown[positiondown$down == j, 1] 
+        }
+    
+  }
+ finalapr <- rbind(finalapr, subset)
+}
+```
+
+## AUGUST
+
+```{r}
+augustday <- 1:31
+
+sequence2 <- 1:(31*1440)
+august <- as.data.frame(sequence2)
+august$day <- rep(1:31, each = 1440)
+august$minute <- minute
+august$temp <- 0
+
+finalaug <- data.frame(sequence = integer(),
+                    day = integer(), 
+                    minute = integer(), 
+                    temp = numeric())
+
+```
+
+
+```{r}
+for (i in 1:length(unique(august$day))) {
+  subset <-  august[august$day == i, ]
+  for (j in 1:length(unique(subset$minute))) {
+    if (j >= 1 & j <= 120){
+      subset[j, 4] <- rduaugust[rduaugust$day == i, 14]
+    } else if (j >= 121 & j <= 720){
+      positionup <- seq((rduaugust[rduaugust$day == i, 14]), (rduaugust[rduaugust$day == i, 13]), length = 600)
+      positionup <- as.data.frame(positionup)
+      positionup$up <- 121:720
+      subset[j, 4] <- positionup[positionup$up == j, 1] 
+      } else if (j >= 721 & j <= 840) {
+          subset[j, 4] <- rduaugust[rduaugust$day == i, 13]
+        } else if (j >= 841 & j <= 1440) {
+          positiondown <- seq((rduaugust[rduaugust$day == i, 13]), (rduaugust[rduaugust$day == (i+1), 14]), length = 600)
+          positiondown <- as.data.frame(positiondown)
+          positiondown$down <- 841:1440
+          subset[j, 4] <- positiondown[positiondown$down == j, 1] 
+        }
+    
+  }
+ finalaug <- rbind(finalaug, subset)
+}
+```
+
+
+
+# 3. Graph to check!
+
+```{r}
+ggplot(data = finalapr, aes(x = sequence, y = temp)) + 
+  theme_bw() + 
+  geom_line() + 
+  labs(x = "Time (min)", y = "Temperature (C)")
+```
+
+
+```{r}
+ggplot(data = finalaug, aes(x = sequence2, y = temp)) + 
+  theme_bw() + 
+  geom_line() + 
+  labs(x = "Time (min)", y = "Temperature (C)")
+```
