@@ -169,16 +169,24 @@ for (i in 1:length(unique(august$day))) {
 # 3. Graph to check!
 
 ```{r}
-ggplot(data = finalapr, aes(x = sequence, y = temp)) + 
+aprilplot <- ggplot(data = finalapr, aes(x = sequence, y = temp)) + 
   theme_bw() + 
   geom_line() + 
   labs(x = "Time (min)", y = "Temperature (C)")
+
+aprilplot
+
+ggsave("~/Desktop/GitHub/Pieris/Figures/aprilplot.png", aprilplot, width = 8, height = 5)
 ```
 
 
 ```{r}
-ggplot(data = finalaug, aes(x = sequence2, y = temp)) + 
+augustplot <- ggplot(data = finalaug, aes(x = sequence2, y = temp)) + 
   theme_bw() + 
   geom_line() + 
   labs(x = "Time (min)", y = "Temperature (C)")
+
+augustplot
+
+ggsave("~/Desktop/GitHub/Pieris/Figures/augustplot.png", augustplot, width = 8, height = 5)
 ```
