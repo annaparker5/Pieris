@@ -32,9 +32,9 @@ Make two separate datafiles
 
 ```{r}
 rduapril <- rdu[rdu$DATE >= "2020-04-01", ]
-rduapril <- rduapril[rduapril$DATE <= "2020-05-16", ]
+rduapril <- rduapril[rduapril$DATE <= "2020-06-01", ]
 
-rduapril$day <- 1:46
+rduapril$day <- 1:62
 ```
 
 ```{r}
@@ -57,11 +57,11 @@ rduaugust$day <- 1:32
 ```{r}
 minute <- 1:(60*24)
 
-aprilday <- 1:45
+aprilday <- 1:61
 
-sequence <- 1:(45*1440)
+sequence <- 1:(61*1440)
 april <- as.data.frame(sequence)
-april$day <- rep(1:45, each = 1440)
+april$day <- rep(1:61, each = 1440)
 april$minute <- minute
 april$temp <- 0
 
@@ -180,3 +180,38 @@ augustplot
 
 ggsave("~/Desktop/GitHub/Pieris/Figures/augustplot.png", augustplot, width = 8, height = 5)
 ```
+
+
+# 4. Insert into official data files
+
+## 0. Load in the datafiles
+
+```{r}
+aprilofficial <- read.csv("~/Desktop/GitHub/Pieris/Data/Apr1toMay31.csv", header = FALSE)
+augustofficial <- read.csv("~/Desktop/GitHub/Pieris/Data/Aug1toAug31.csv", header = FALSE)
+```
+
+Cut off first two hours of official and last two hours of final 
+
+```{r}
+aprilofficial <- aprilofficial[121:87840, ]
+augustofficial <- augustofficial[121:44640, ]
+```
+
+```{r}
+finalapr <- finalapr[1:87720, ]
+finalaug <- finalaug[1:44520, ]
+```
+
+
+```{r}
+aprilofficial$V1 <- finalapr$temp
+augustofficial$V1 <- finalaug$temp
+```
+
+
+```{r}
+#write.csv(aprilofficial, file = "~/Desktop/GitHub/Pieris/Data/simulated_36_-79_2_d_2022_4_1_5_31_inbetween.csv")
+#write.csv(augustofficial,file = "~/Desktop/GitHub/Pieris/Data/simulated_36_-79_2_d_2022_8_1_8_31_inbetween.csv")
+```
+
