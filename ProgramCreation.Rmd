@@ -46,6 +46,14 @@ rduaugust$day <- 1:32
 
 ```
 
+## Change 0degC day to 2degC 
+
+```{r}
+rduapril[11, 14] <- 2
+```
+
+
+
 # 2. Make the for loop 
 
 **Starting the for loop at 2 am** 
@@ -211,7 +219,9 @@ augustofficial$V1 <- finalaug$temp
 
 
 ```{r}
-write.csv(aprilofficial, file = "~/Desktop/GitHub/Pieris/Data/simulated_36_-79_2_d_2022_4_1_5_31_inbetween.csv")
-write.csv(augustofficial,file = "~/Desktop/GitHub/Pieris/Data/simulated_36_-79_2_d_2022_8_1_8_31_inbetween.csv")
+write.csv(aprilofficial, file = "~/Desktop/GitHub/Pieris/Data/simulated_36_-79_2_d_2022_4_1_5_31_inbetween.csv", 
+          row.names =  FALSE)
+write.csv(augustofficial,file = "~/Desktop/GitHub/Pieris/Data/simulated_36_-79_2_d_2022_8_1_8_31_inbetween.csv",  
+          row.names = FALSE)
 ```
 
