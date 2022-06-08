@@ -32,24 +32,14 @@ Make two separate datafiles
 
 ```{r}
 rduapril <- rdu[rdu$DATE >= "2020-04-01", ]
-rduapril <- rduapril[rduapril$DATE <= "2020-04-30", ]
+rduapril <- rduapril[rduapril$DATE <= "2020-05-16", ]
 
-#Add an extra row in so the r code doesn't break
-
-rduapril[31, ] <- rduapril[30,]
-rduapril[31, 14] <- 11.666
-
-rduapril$day <- 1:31
+rduapril$day <- 1:46
 ```
 
 ```{r}
 rduaugust <- rdu[rdu$DATE >= "2020-08-01", ]
-rduaugust <- rduaugust[rduaugust$DATE <= "2020-08-31", ]
-
-#Add an extra row in so the r code doesn't break
-
-rduaugust[32, ] <- rduaugust[31,]
-rduaugust[32, 14] <- 22.77
+rduaugust <- rduaugust[rduaugust$DATE <= "2020-09-01", ]
 
 rduaugust$day <- 1:32
 
@@ -67,11 +57,11 @@ rduaugust$day <- 1:32
 ```{r}
 minute <- 1:(60*24)
 
-aprilday <- 1:30
+aprilday <- 1:45
 
-sequence <- 1:(30*1440)
+sequence <- 1:(45*1440)
 april <- as.data.frame(sequence)
-april$day <- rep(1:30, each = 1440)
+april$day <- rep(1:45, each = 1440)
 april$minute <- minute
 april$temp <- 0
 
