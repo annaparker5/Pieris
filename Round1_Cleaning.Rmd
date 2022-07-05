@@ -63,3 +63,10 @@ for (i in 1:length(round1$Surv.eclose)){
   }
 }
 ```
+
+# 2. 
+
+```{r}
+write.csv(round1, file = "~/Desktop/Github/Pieris/Data/CleanedRound1.csv", row.names = FALSE)
+```
+
