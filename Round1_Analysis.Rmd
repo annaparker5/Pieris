@@ -1,0 +1,21 @@
+---
+title: "Round1_Analysis"
+output: html_notebook
+---
+
+0. Load in packages and data sets
+1. Compare mass and dev time of larval pupal intermediates with pupae across temps
+2. Compare mass and dev time of deformed adults with adults across temps
+3. Make data frame with means and standard errors across temps
+4. Make graphs 
+
+# 0. Load in packages and data sets
+```{r}
+library(dplyr)
+library(ggplot2)
+library(lmerTest)
+```
+```{r}
+data <- read.csv("~/Desktop/Github/Pieris/Data/CleanedRound1.csv", header = TRUE)
+```
+
