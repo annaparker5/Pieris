@@ -3,3 +3,9 @@ title: "R Notebook"
 output: html_notebook
 ---
 
+This is a script to finish cleaning the round 1 experimental data and create a new output csv file. 
+
+0. Load in data and packages
+1. Add in survival binaries (Surv.4th, 5th, etc.)
+2. Save the output file
+
