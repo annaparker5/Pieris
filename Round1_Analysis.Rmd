@@ -110,6 +110,28 @@ pupalmeans <- merge(pupalmeans, pupaltimemeans, by = c("Mean.Temp", "PupateOk", 
 ```
 
 
+## Add in dvelopment rate
+
+```{r}
+data$Dev.Rate <- 1 / (data$Time.pupa)
+```
+
+```{r}
+pupalratemeans <- summarySE(data = data[data$Surv.pupa == "Y", ], measurevar = "Dev.Rate", groupvars = c("Mean.Temp", "PupateOk"))
+
+pupalratemeans
+
+pupalratemeans$Rate.se <- pupalratemeans$se
+
+pupalratemeans <- pupalratemeans %>%
+  select(Mean.Temp, PupateOk, N, Dev.Rate, Rate.se)
+```
+
+
+```{r}
+pupalmeans <- merge(pupalmeans, pupalratemeans, by = c("Mean.Temp", "PupateOk", "N"))
+```
+
 
 # 4. Graphing everything
 
@@ -133,5 +155,24 @@ pupalgraph
 ggsave("~/Desktop/GitHub/Pieris/Figures/pupalgraph.png", pupalgraph, width = 8, height = 5)
 
 ```
+
+
+## Final graph: Dev **RATE** vs. temp treatment
+
+```{r}
+devrategraph <- ggplot(data = pupalmeans, aes(x = Mean.Temp, y = Dev.Rate, group = PupateOk, shape = PupateOk)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_errorbar(aes(ymin = Dev.Rate - Rate.se, ymax = Dev.Rate + Rate.se), width = 0.3) + 
+  scale_shape_manual(values = c(21, 19)) + 
+  geom_line(aes(linetype = PupateOk)) + 
+  scale_linetype_manual(values = c("dotdash", "solid")) + 
+  labs(x = "Temperature Treatment", y = "Development Rate", shape = "Successful Pupation", linetype = "Successful Pupation")
+
+devrategraph
+
+ggsave("~/Desktop/GitHub/Pieris/Figures/devrategraph.png", devrategraph, width = 8, height = 5)
+```
+
 
 
