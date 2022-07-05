@@ -17,5 +17,51 @@ library(lmerTest)
 ```
 ```{r}
 data <- read.csv("~/Desktop/Github/Pieris/Data/CleanedRound1.csv", header = TRUE)
+
+data$Mean.Temp <- as.factor(data$Mean.Temp)
+```
+
+# 1. Compare larval pupal ints with successful pupae
+
+## Mass at pupation
+
+```{r}
+masspupae <- lm(Mass.pupa ~ PupateOk*Mean.Temp, data = data[data$Surv.pupa == "Y", ])
+
+anova(masspupae)
+
+summary(masspupae)
+```
+Drop the non-significant interaction term
+
+
+```{r}
+masspupaeadd <- lm(Mass.pupa ~ PupateOk + Mean.Temp, data = data[data$Surv.pupa == "Y", ])
+
+anova(masspupaeadd)
+
+summary(masspupaeadd)
+```
+
+
+## Time at pupation
+
+
+```{r}
+timepupae <- lm(Time.pupa ~ PupateOk*Mean.Temp, data = data[data$Surv.pupa == "Y", ])
+
+anova(timepupae)
+
+summary(timepupae)
+```
+
+Drop insignificant interaction term
+
+```{r}
+timepupaeadd <- lm(Time.pupa ~ PupateOk + Mean.Temp, data = data[data$Surv.pupa == "Y", ])
+
+anova(timepupaeadd)
+
+summary(timepupaeadd)
 ```
 
