@@ -14,6 +14,7 @@ output: html_notebook
 library(dplyr)
 library(ggplot2)
 library(lmerTest)
+library(Rmisc)
 ```
 ```{r}
 data <- read.csv("~/Desktop/Github/Pieris/Data/CleanedRound1.csv", header = TRUE)
@@ -64,4 +65,73 @@ anova(timepupaeadd)
 
 summary(timepupaeadd)
 ```
+
+# 2. Compare adults 
+
+
+# 3. Get means for different groups
+
+## Pupal mass
+
+Separating out LPI and successful pupae 
+
+### Mean mass and SE
+
+```{r}
+pupalmeans <- summarySE(data = data[data$Surv.pupa == "Y", ], measurevar = "Mass.pupa", groupvars = c("Mean.Temp", "PupateOk"))
+
+pupalmeans
+
+pupalmeans$Mass.se <- pupalmeans$se
+
+pupalmeans <- pupalmeans %>%
+  select(Mean.Temp, PupateOk, N, Mass.pupa, Mass.se)
+
+
+```
+
+### Mean dev time and SE
+
+```{r}
+pupaltimemeans <- summarySE(data = data[data$Surv.pupa == "Y", ], measurevar = "Time.pupa", groupvars = c("Mean.Temp", "PupateOk"))
+
+pupaltimemeans
+
+pupaltimemeans$Time.se <- pupaltimemeans$se
+
+pupaltimemeans <- pupaltimemeans %>%
+  select(Mean.Temp, PupateOk, N, Time.pupa, Time.se)
+```
+
+### Merge together
+
+```{r}
+pupalmeans <- merge(pupalmeans, pupaltimemeans, by = c("Mean.Temp", "PupateOk", "N"))
+```
+
+
+
+# 4. Graphing everything
+
+## Endpoints of pupal mass and dev time
+
+
+```{r}
+pupalgraph <- ggplot(data = pupalmeans, aes(x = Time.pupa, y = Mass.pupa, color = Mean.Temp, shape = PupateOk)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_errorbar(aes(ymin = Mass.pupa - Mass.se, ymax = Mass.pupa + Mass.se)) + 
+  geom_errorbarh(aes(xmin = Time.pupa - Time.se, xmax = Time.pupa + Time.se)) + 
+  guides(scale = "none") + 
+  scale_color_manual(values = c("purple", "#1E88E5", "lime green", "orange", "#D81B60")) + 
+  scale_shape_manual(values = c(21, 19)) + 
+  labs(x = "Time until pupation (days)", y = "Mass at pupation (mg)", color = "Mean temperature treatment", shape = "Successful Pupation")
+
+
+pupalgraph
+
+ggsave("~/Desktop/GitHub/Pieris/Figures/pupalgraph.png", pupalgraph, width = 8, height = 5)
+
+```
+
 
