@@ -15,7 +15,7 @@ library(dplyr)
 ```
 
 ```{r}
-round1 <- read.csv("~/Desktop/GitHub/Pieris/Data/Round1_July5.csv", header = TRUE)
+round1 <- read.csv("~/Desktop/GitHub/Pieris/Data/Round1_July6.csv", header = TRUE)
 ```
 
 # 1. Making for loop 
