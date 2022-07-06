@@ -12,6 +12,7 @@ output: html_notebook
 # 0. Load in packages and data sets
 ```{r}
 library(dplyr)
+library(tidyr)
 library(ggplot2)
 library(lmerTest)
 library(Rmisc)
@@ -236,5 +237,106 @@ pupmasstempgraph
 ```{r}
 ggsave("~/Desktop/GitHub/Pieris/Figures/pupmasstempgraph.png", pupmasstempgraph, width = 8, height = 5)
 ```
+
+## Mass across development plot
+
+0. Select only the columns we need from `r data`
+1. Add in a start point
+2. Use the `r gather` function to make a "long" dataset
+3. Use SummarySE to get our means from that long dataset
+4. Actually graph it
+
+### 0. Select needed columns
+
+```{r}
+condensed <- data %>%
+  select(CID, Mean.Temp, Time.4th, Mass.4th, Time.5th, Mass.5th, Time.pupa, Mass.pupa)
+```
+
+### 1. Add a start point
+
+```{r}
+condensed$Time.hatch <- 0
+condensed$Mass.hatch <- 0.01
+```
+
+### 2. Use the gather function
+
+```{r}
+condensedmass <- condensed %>%
+  select(CID, Mean.Temp, Mass.hatch, Mass.4th, Mass.5th, Mass.pupa)
+
+masslong <- condensedmass %>%
+  gather(instar, mass, Mass.hatch, Mass.4th, Mass.5th, Mass.pupa)
+
+masslong$instar <- gsub("Mass.", "", masslong$instar)
+
+```
+
+```{r}
+condensedtime <- condensed %>%
+  select(CID, Mean.Temp, Time.hatch, Time.4th, Time.5th, Time.pupa)
+
+timelong <- condensedtime %>%
+  gather(instar, time, Time.hatch, Time.4th, Time.5th, Time.pupa)
+
+timelong$instar <- gsub("Time.", "", timelong$instar)
+```
+
+```{r}
+datalong <- merge(masslong, timelong, by = c("CID", "Mean.Temp", "instar"))
+```
+
+Make sure our instars are in the right order
+
+```{r}
+datalong$instar <- as.factor(datalong$instar) 
+
+datalong$instar <- factor(x = datalong$instar, levels = c("hatch", "4th", "5th", "pupa"))
+```
+
+### 3. Get means and standard errors
+
+```{r}
+longmasssum <- summarySE(data =datalong, 
+                         measurevar = "mass", 
+                         groupvars = c("Mean.Temp", "instar"), 
+                         na.rm = TRUE)
+
+longtimesum <- summarySE(data =datalong, 
+                         measurevar = "time", 
+                         groupvars = c("Mean.Temp", "instar"), 
+                         na.rm = TRUE)
+
+longmasssum$mass.se <- longmasssum$se
+longtimesum$time.se <- longtimesum$se
+
+longmasssum <- longmasssum %>%
+  select(Mean.Temp, instar, mass, mass.se)
+
+longtimesum <- longtimesum %>%
+  select(Mean.Temp, instar, time, time.se)
+
+
+longsum <- merge(longmasssum, longtimesum, by = c("Mean.Temp", "instar"))
+```
+
+### 4. Finally we graph it
+
+
+```{r}
+ggplot(data = longsum, aes(x = time, y = mass, group = Mean.Temp, color = Mean.Temp)) + 
+  theme_bw() + 
+  geom_point(size = 2) + 
+  geom_line() + 
+  geom_errorbar(aes(ymin = mass - mass.se, ymax = mass + mass.se)) + 
+  geom_errorbarh(aes(xmin = time - time.se, xmax = time + time.se)) + 
+  labs(x = "Development time (days)", y = "Mass (mg)", color = "Temperature Treatment") + 
+  scale_color_manual(values = c("purple", "#1E88E5", "lime green", "orange", "#D81B60"))
+```
+
+
+
+
 
 
