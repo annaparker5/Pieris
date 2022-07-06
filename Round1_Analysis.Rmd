@@ -274,7 +274,7 @@ survdata[4, 2] <- survpercsum[8, 3] / (survpercsum[8, 3] + survpercsum[7, 3])
 survdata[5, 2] <- survpercsum[10, 3] / (survpercsum[10, 3] + survpercsum[9, 3])
 ```
 
-### $. Graph it
+### 4. Graph it
 
 ```{r}
 survgraph <- ggplot(data = survdata, aes(x = Mean.Temp, y = surv.perc, group = group)) + 
@@ -290,8 +290,6 @@ survgraph
 ```{r}
 ggsave("~/Desktop/GitHub/Pieris/Figures/survgraph.png", survgraph, width = 8, height = 5)
 ```
-
-
 
 ## Mass across development plot
 
@@ -397,6 +395,21 @@ ggsave("~/Desktop/GitHub/Pieris/Figures/masstimegraph.png", masstimegraph, width
 ```
 
 
+# 5. Miscellaneous models
+
+Does time to death vary with temperature?
+
+```{r}
+data$Stage.final <- as.factor(data$Stage.final)
+
+moddeath <- lm(Time.death ~ Mean.Temp, data = data)
+
+anova(moddeath)
+
+summary(moddeath)
+```
+
+Doesn't work because development times are different across treatments. Can't run with two categorical variables (Stage.final and Mean.Temp) - need to figure out a different analysis. 
 
 
 
