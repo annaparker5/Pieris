@@ -217,7 +217,24 @@ ggsave("~/Desktop/GitHub/Pieris/Figures/devrategraph.png", devrategraph, width =
 ```
 
 
+## Pupal mass vs temp treatment
 
+```{r}
+pupmasstempgraph <- ggplot(data = pupalmeans, aes(x = Mean.Temp, y = Mass.pupa, group = PupateOk, shape = PupateOk)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_errorbar(aes(ymin = Mass.pupa - Mass.se, ymax = Mass.pupa + Mass.se), width = 0.3) + 
+  #geom_point(data= data[data$Surv.pupa=="Y", ], aes(x=Mean.Temp, y=Mass.pupa, shape=PupateOk), alpha = .4)+ 
+  scale_shape_manual(values = c(21, 19)) + 
+  geom_line(aes(linetype = PupateOk)) + 
+  scale_linetype_manual(values = c("dotdash", "solid")) + 
+  labs(x = "Temperature Treatment", y = "Pupal Mass", shape = "Successful Pupation", linetype = "Successful Pupation")
 
+pupmasstempgraph
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Figures/pupmasstempgraph.png", pupmasstempgraph, width = 8, height = 5)
+```
 
 
