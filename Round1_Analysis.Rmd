@@ -325,7 +325,7 @@ longsum <- merge(longmasssum, longtimesum, by = c("Mean.Temp", "instar"))
 
 
 ```{r}
-ggplot(data = longsum, aes(x = time, y = mass, group = Mean.Temp, color = Mean.Temp)) + 
+masstimegraph <- ggplot(data = longsum, aes(x = time, y = mass, group = Mean.Temp, color = Mean.Temp)) + 
   theme_bw() + 
   geom_point(size = 2) + 
   geom_line() + 
@@ -333,8 +333,13 @@ ggplot(data = longsum, aes(x = time, y = mass, group = Mean.Temp, color = Mean.T
   geom_errorbarh(aes(xmin = time - time.se, xmax = time + time.se)) + 
   labs(x = "Development time (days)", y = "Mass (mg)", color = "Temperature Treatment") + 
   scale_color_manual(values = c("purple", "#1E88E5", "lime green", "orange", "#D81B60"))
+
+masstimegraph
 ```
 
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Figures/masstimegraph.png", masstimegraph, width = 8, height = 5)
+```
 
 
 
