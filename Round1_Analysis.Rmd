@@ -68,6 +68,42 @@ summary(timepupaeadd)
 
 # 2. Compare adults 
 
+Mass at eclosion
+
+```{r}
+massadults <- lm(Mass.adult ~ EcloseOk*Mean.Temp, data = data[data$Surv.eclose == "Y", ])
+
+anova(massadults)
+
+summary(massadults)
+```
+Remove insignificant interaction term
+
+```{r}
+massadultsadd <- lm(Mass.adult ~ EcloseOk+Mean.Temp, data = data[data$Surv.eclose == "Y", ])
+
+anova(massadultsadd)
+
+summary(massadultsadd)
+```
+
+```{r}
+timeadults <- lm(Time.eclose ~ EcloseOk * Mean.Temp, data = data[data$Surv.eclose == "Y", ])
+
+anova(timeadults)
+
+summary(timeadults)
+```
+
+drop insignificant interaction term
+
+```{r}
+timeadultsadd <- lm(Time.eclose ~ EcloseOk + Mean.Temp, data = data[data$Surv.eclose == "Y", ])
+
+anova(timeadultsadd)
+
+summary(timeadultsadd)
+```
 
 # 3. Get means for different groups
 
@@ -151,10 +187,14 @@ pupalgraph <- ggplot(data = pupalmeans, aes(x = Time.pupa, y = Mass.pupa, color 
 
 
 pupalgraph
-
-ggsave("~/Desktop/GitHub/Pieris/Figures/pupalgraph.png", pupalgraph, width = 8, height = 5)
-
 ```
+
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Figures/pupalgraph.png", pupalgraph, width = 8, height = 5)
+```
+
+
 
 
 ## Final graph: Dev **RATE** vs. temp treatment
@@ -170,9 +210,14 @@ devrategraph <- ggplot(data = pupalmeans, aes(x = Mean.Temp, y = Dev.Rate, group
   labs(x = "Temperature Treatment", y = "Development Rate", shape = "Successful Pupation", linetype = "Successful Pupation")
 
 devrategraph
+```
 
+```{r}
 ggsave("~/Desktop/GitHub/Pieris/Figures/devrategraph.png", devrategraph, width = 8, height = 5)
 ```
+
+
+
 
 
 
