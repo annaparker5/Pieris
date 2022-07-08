@@ -8,6 +8,8 @@ output: html_notebook
 2. Compare mass and dev time of deformed adults with adults across temps
 3. Make data frame with means and standard errors across temps
 4. Make graphs 
+5. Kaplan Meier 
+6. Miscellaneous Models
 
 # 0. Load in packages and data sets
 ```{r}
@@ -395,7 +397,22 @@ ggsave("~/Desktop/GitHub/Pieris/Figures/masstimegraph.png", masstimegraph, width
 ```
 
 
-# 5. Miscellaneous models
+# 5. Kaplan Meier
+
+1. Create survtime column by concat. time.eclose and time.death cols
+2. Create surv object 
+3. Run model fit of the surv object
+4. Plot in base r?
+5. Plot using survminer
+6. Coxph modeling
+
+## 1. Create survtime column by concat. time.eclose and time.death cols
+```{r}
+
+```
+
+
+# 6. Miscellaneous models
 
 Does time to death vary with temperature?
 
