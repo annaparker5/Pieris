@@ -471,8 +471,13 @@ ggsave("~/Desktop/GitHub/Pieris/Figures/KMsurvplot.png", survplotlegend, width =
 ## 7. Cox proportional hazard modeling
 
 ```{r}
+coxmodel <- coxph(survobject ~ Mean.Temp, data = data)
 
+summary(coxmodel)
+anova(coxmodel)
 ```
+
+Treatment does affect survival curves/probability. 
 
 
 # 6. Miscellaneous models
