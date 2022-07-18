@@ -1,0 +1,276 @@
+---
+title: "Curve Fitting"
+output: html_notebook
+---
+
+Here, we will fit the dev rate and survival curves with rTPC. Then, we will make a function to pull from rTPC curves to compare to the April and August data. 
+
+Roadmap: 
+
+0. Install packages and load in data
+1. Redo data manipulation
+2. Fit dev rate curve
+3. Fit survival curve
+4. 
+
+
+#0. Load in packages and data
+
+```{r}
+library(remotes)
+#remotes::install_github("padpadpadpad/rTPC")
+library(rTPC)
+library(nls.multstart)
+library(Rmisc)
+library(tidyverse)
+library(broom)
+library(purrr)
+library(ggplot2)
+```
+
+```{r}
+data <- read.csv("~/Desktop/Github/Pieris/Data/CleanedRound1.csv", header = TRUE)
+
+data$Mean.Temp <- as.factor(data$Mean.Temp)
+```
+
+# 1. Redo data analysis 
+
+## Pupal mass
+
+Separating out LPI and successful pupae 
+
+### Mean mass and SE
+
+```{r}
+pupalmeans <- summarySE(data = data[data$Surv.pupa == "Y", ], measurevar = "Mass.pupa", groupvars = c("Mean.Temp", "PupateOk"))
+
+pupalmeans
+
+pupalmeans$Mass.se <- pupalmeans$se
+
+pupalmeans <- pupalmeans %>%
+  select(Mean.Temp, PupateOk, N, Mass.pupa, Mass.se)
+
+
+```
+
+### Mean dev time and SE
+
+```{r}
+pupaltimemeans <- summarySE(data = data[data$Surv.pupa == "Y", ], measurevar = "Time.pupa", groupvars = c("Mean.Temp", "PupateOk"))
+
+pupaltimemeans
+
+pupaltimemeans$Time.se <- pupaltimemeans$se
+
+pupaltimemeans <- pupaltimemeans %>%
+  select(Mean.Temp, PupateOk, N, Time.pupa, Time.se)
+```
+
+### Merge together
+
+```{r}
+pupalmeans <- merge(pupalmeans, pupaltimemeans, by = c("Mean.Temp", "PupateOk", "N"))
+```
+
+
+## Add in dvelopment rate
+
+```{r}
+data$Dev.Rate <- 1 / (data$Time.pupa)
+```
+
+```{r}
+pupalratemeans <- summarySE(data = data[data$Surv.pupa == "Y", ], measurevar = "Dev.Rate", groupvars = c("Mean.Temp", "PupateOk"))
+
+pupalratemeans
+
+pupalratemeans$Rate.se <- pupalratemeans$se
+
+pupalratemeans <- pupalratemeans %>%
+  select(Mean.Temp, PupateOk, N, Dev.Rate, Rate.se)
+```
+
+
+```{r}
+pupalmeans <- merge(pupalmeans, pupalratemeans, by = c("Mean.Temp", "PupateOk", "N"))
+```
+
+## Survival to pupation vs temp treatment 
+
+1. Create summary table
+2. Create blank table for input
+3. Hard code input
+4. Graph it
+
+### 1. Create summary table
+
+```{r}
+survpercsum <- summarySE(data = data, 
+                         measurevar = "Mass.pupa", 
+                         groupvars = c("Mean.Temp", "Surv.pupa"))
+```
+
+### 2. Create blank table
+
+```{r}
+survdata <- data.frame(Mean.Temp = c(16, 21, 26, 30, 34), 
+                       surv.perc = 0, 
+                       group = 1)
+
+survdata$Mean.Temp <- as.factor(survdata$Mean.Temp)
+survdata$group = as.factor(survdata$group)
+```
+
+### 3. Hard code it
+
+```{r}
+survdata[1, 2] <- survpercsum[2, 3] / (survpercsum[2, 3] + survpercsum[1, 3])
+survdata[2, 2] <- survpercsum[4, 3] / (survpercsum[4, 3] + survpercsum[3, 3])
+survdata[3, 2] <- survpercsum[6, 3] / (survpercsum[6, 3] + survpercsum[5, 3])
+survdata[4, 2] <- survpercsum[8, 3] / (survpercsum[8, 3] + survpercsum[7, 3])
+survdata[5, 2] <- survpercsum[10, 3] / (survpercsum[10, 3] + survpercsum[9, 3])
+```
+
+# 2. Fit dev rate curve using rTPC
+
+
+Change temp to not be a factor
+```{r}
+pupalmeans$Mean.Temp <- as.character(pupalmeans$Mean.Temp)
+pupalmeans$Mean.Temp <- as.numeric(pupalmeans$Mean.Temp)
+
+pupalmeansyes <- pupalmeans[pupalmeans$PupateOk == "Y", ]
+```
+
+
+Our object is called `r pupalmeans`. 
+
+```{r}
+fitmodgauss <- nls_multstart(data = pupalmeansyes[, c(1, 8)], 
+                             Dev.Rate ~ modifiedgaussian_2006(temp = Mean.Temp, rmax, topt, a, b), 
+                             iter = c(5, 5, 5, 5), 
+                             start_lower = get_start_vals(pupalmeansyes$Mean.Temp, pupalmeansyes$Dev.Rate,
+                                                          model_name = "modifiedgaussian_2006") - 10,
+                             start_upper = get_start_vals(pupalmeansyes$Mean.Temp, pupalmeansyes$Dev.Rate,
+                                                          model_name = "modifiedgaussian_2006") + 10, 
+                             lower = get_lower_lims(pupalmeansyes$Mean.Temp, pupalmeansyes$Dev.Rate,
+                                                    model_name = "modifiedgaussian_2006"), 
+                             upper = get_upper_lims(pupalmeansyes$Mean.Temp, pupalmeansyes$Dev.Rate,
+                                                    model_name = "modifiedgaussian_2006")) 
+```
+
+```{r}
+summary(fitmodgauss)
+```
+
+```{r}
+fitmodgauss2 <- as.data.frame(fitmodgauss)
+```
+
+
+Get the predictions out of the model using "augment"
+
+```{r}
+temprange <- seq(16, 34, length.out = 100)
+
+predictions <- fitmodgauss %>%
+  mutate(., preds = map(fitmodgauss, augment, temprange = temprange))
+
+```
+
+
+
+
+Attempting to graph! 
+
+```{r}
+ggplot(data = pupalmeansyes, aes(x = Mean.Temp, y = Dev.Rate)) + 
+  geom_point() + 
+  geom_line(data = fitmodgauss[[1]], aes(x = temp, y = fitted))
+```
+
+# Trying some bullshit
+
+
+```{r}
+d <- as.data.frame(cbind(pupalmeansyes$Mean.Temp, pupalmeansyes$Dev.Rate))
+
+colnames(d) <- c("temp", "rate")
+```
+
+
+```{r}
+d_fits <- nest(d, data = c(temp, rate)) %>%
+  mutate(beta = map(data, ~nls_multstart(rate~beta_2012(temp = temp, a, b, c, d, e),
+                                         data = .x,
+                                         iter = c(6,6,6,6,6),
+                                         start_lower = get_start_vals(.x$temp, .x$rate, model_name = 'beta_2012') - 10,
+                                         start_upper = get_start_vals(.x$temp, .x$rate, model_name = 'beta_2012') + 10,
+                                         lower = get_lower_lims(.x$temp, .x$rate, model_name = 'beta_2012'),
+                                         upper = get_upper_lims(.x$temp, .x$rate, model_name = 'beta_2012'),
+                                         supp_errors = 'Y',
+                                         convergence_count = FALSE)),
+         gaussian = map(data, ~nls_multstart(rate~gaussian_1987(temp = temp, rmax, topt, a),
+                                             data = .x,
+                                             iter = c(4,4,4),
+                                             start_lower = get_start_vals(.x$temp, .x$rate, model_name = 'gaussian_1987') - 10,
+                                             start_upper = get_start_vals(.x$temp, .x$rate, model_name = 'gaussian_1987') + 10,
+                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'gaussian_1987'),
+                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'gaussian_1987'),
+                                             supp_errors = 'Y',
+                                             convergence_count = FALSE)),
+         weibull = map(data, ~nls_multstart(rate~weibull_1995(temp = temp, a,topt,b,c),
+                                            data = .x,
+                                            iter = c(4,4,4,4),
+                                            start_lower = get_start_vals(.x$temp, .x$rate, model_name = 'weibull_1995') - 10,
+                                            start_upper = get_start_vals(.x$temp, .x$rate, model_name = 'weibull_1995') + 10,
+                                            lower = get_lower_lims(.x$temp, .x$rate, model_name = 'weibull_1995'),
+                                            upper = get_upper_lims(.x$temp, .x$rate, model_name = 'weibull_1995'),
+                                            supp_errors = 'Y',
+                                            convergence_count = FALSE)))
+
+# stack models
+d_stack <- select(d_fits, -data) %>%
+  pivot_longer(., names_to = 'model_name', values_to = 'fit', beta:weibull)
+
+# get parameters using tidy
+params <- d_stack %>%
+  mutate(., est = map(fit, tidy)) %>%
+  select(-fit) %>%
+  unnest(est)
+
+# get predictions using augment
+newdata <- tibble(temp = seq(min(d$temp), max(d$temp), length.out = 100))
+d_preds <- d_stack %>%
+  mutate(., preds = map(fit, augment, newdata = newdata)) %>%
+  select(-fit) %>%
+  unnest(preds)
+```
+
+
+```{r}
+# plot fits
+ggplot(d_preds, aes(temp, rate)) +
+  geom_point(aes(temp, rate), d) +
+  geom_line(aes(temp, .fitted), col = 'blue') +
+  facet_wrap(~model_name, scales = 'free', ncol = 5) +
+  theme_bw(base_size = 12) +
+  theme(legend.position = 'none',
+        strip.text = element_text(hjust = 0),
+        strip.background = element_blank()) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Development rate',
+       title = 'Model fit comparison') +
+  geom_hline(aes(yintercept = 0), linetype = 2)
+
+```
+
+
+
+
+
+
+
+
