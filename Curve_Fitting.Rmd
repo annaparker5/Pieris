@@ -287,9 +287,56 @@ ggplot(d_preds, aes(temp, rate)) +
 AIC(d_fits[[2]][[1]],d_fits[[3]][[1]], d_fits[[4]][[1]], d_fits[[5]][[1]])
 ```
 
+Modified gaussian is the best. Now let's predict to the x-axis and graph that. 
+
+
+```{r}
+toxaxis <- tibble(temp = seq((-5), 50, length.out = 200))
+
+d_preds_two <- d_stack %>%
+  mutate(., preds = map(fit, augment, newdata = toxaxis)) %>%
+  select(-fit) %>%
+  unnest(preds)
+```
+
+```{r}
+ggplot(d_preds_two, aes(temp, rate)) +
+  geom_point(aes(temp, rate), d) +
+  geom_line(aes(temp, .fitted), col = 'blue') +
+  facet_wrap(~model_name, scales = 'free', ncol = 5) +
+  theme_bw(base_size = 12) +
+  theme(legend.position = 'none',
+        strip.text = element_text(hjust = 0),
+        strip.background = element_blank()) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Development rate',
+       title = 'Model fit comparison') +
+  geom_hline(aes(yintercept = 0), linetype = 2)
+```
 
 
 
+```{r}
+modelcomp <- ggplot(d_preds_two[c(1:200, 601:800), ], aes(temp, rate)) +
+  geom_point(aes(temp, rate), d) +
+  geom_line(aes(temp, .fitted), col = 'blue') +
+  facet_wrap(~model_name, scales = 'free', ncol = 5) +
+  theme_bw(base_size = 12) +
+  theme(legend.position = 'none',
+        strip.text = element_text(hjust = 0),
+        strip.background = element_blank()) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Development rate',
+       title = 'Model fit comparison') +
+  geom_hline(aes(yintercept = 0), linetype = 2)
+
+modelcomp
+
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Figures/fittedmodelcomp.png", modelcomp, width = 8, height = 5)
+```
 
 
 
