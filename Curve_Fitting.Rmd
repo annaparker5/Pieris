@@ -281,6 +281,11 @@ ggplot(d_preds, aes(temp, rate)) +
 
 ```
 
+## Compare models using AIC
+
+```{r}
+AIC(d_fits[[2]][[1]],d_fits[[3]][[1]], d_fits[[4]][[1]], d_fits[[5]][[1]])
+```
 
 
 
