@@ -194,7 +194,7 @@ ggplot(data = pupalmeansyes, aes(x = Mean.Temp, y = Dev.Rate)) +
   geom_line(data = fitmodgauss[[1]], aes(x = temp, y = fitted))
 ```
 
-# Modifying some bullshit
+## Modifying some bullshit
 
 
 ```{r}
@@ -362,4 +362,236 @@ ggsave("~/Desktop/GitHub/Pieris/Figures/fittedmodelcomp2.png", modelcomp2, width
 ```
 
 
+# 3. Survival curves
+
+```{r}
+survdata$Mean.Temp <- as.character(survdata$Mean.Temp)
+survdata$Mean.Temp <- as.numeric(survdata$Mean.Temp)
+```
+
+
+```{r}
+s <- as.data.frame(cbind(survdata$Mean.Temp, survdata$surv.perc))
+
+colnames(s) <- c("temp", "rate")
+```
+
+
+```{r}
+s_fits <- nest(s, data = c(temp, rate)) %>%
+  mutate(beta = map(data, ~nls_multstart(rate~beta_2012(temp = temp, a, b, c, d, e),
+                                         data = .x,
+                                         iter = c(4,4,4,4,4),
+                                         start_lower = get_start_vals(.x$temp, .x$rate, 
+                                                                      model_name = 'beta_2012') - 10,
+                                         start_upper = get_start_vals(.x$temp, .x$rate, 
+                                                                      model_name = 'beta_2012') + 10,
+                                         lower = get_lower_lims(.x$temp, .x$rate, model_name = 'beta_2012'),
+                                         upper = get_upper_lims(.x$temp, .x$rate, model_name = 'beta_2012'),
+                                         supp_errors = 'Y',
+                                         convergence_count = FALSE)),
+         
+         boatman = map(data, ~nls_multstart(rate~boatman_2017(temp = temp, rmax, tmin, tmax, a, b),
+                                             data = .x,
+                                             iter = c(4,4,4,4,4),
+                                             start_lower = get_start_vals(.x$temp, .x$rate, model_name = 'boatman_2017') - 10,
+                                             start_upper = get_start_vals(.x$temp, .x$rate, model_name = 'boatman_2017') + 10,
+                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'boatman_2017'),
+                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'boatman_2017'),
+                                             supp_errors = 'Y',
+                                             convergence_count = FALSE)),
+         
+         delong =  map(data, ~nls_multstart(rate~delong_2017(temp = temp, c, eb, ef, tm, ehc),
+                                             data = .x,
+                                             iter = c(4,4,4,4,4),
+                                             start_lower = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'delong_2017') - 10,
+                                             start_upper = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'delong_2017') + 10,
+                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'delong_2017'),
+                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'delong_2017'),
+                                             supp_errors = 'Y',
+                                             convergence_count = FALSE)),
+         
+         flinn = map(data, ~nls_multstart(rate~flinn_1991(temp = temp, a,b,c),
+                                            data = .x,
+                                            iter = c(4,4,4),
+                                            start_lower = get_start_vals(.x$temp, .x$rate, model_name = 'flinn_1991') - 10,
+                                            start_upper = get_start_vals(.x$temp, .x$rate, model_name = 'flinn_1991') + 10,
+                                            lower = get_lower_lims(.x$temp, .x$rate, model_name = 'flinn_1991'),
+                                            upper = get_upper_lims(.x$temp, .x$rate, model_name = 'flinn_1991'),
+                                            supp_errors = 'Y',
+                                            convergence_count = FALSE)),
+         
+          gaussian =  map(data, ~nls_multstart(rate~gaussian_1987(temp = temp, rmax, topt, a),
+                                             data = .x,
+                                             iter = c(4,4,4),
+                                             start_lower = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'gaussian_1987') - 10,
+                                             start_upper = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'gaussian_1987') + 10,
+                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'gaussian_1987'),
+                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'gaussian_1987'),
+                                             supp_errors = 'Y',
+                                             convergence_count = FALSE)), 
+         
+         johnlew =  map(data, ~nls_multstart(rate~johnsonlewin_1946(temp = temp, rO, e, eh, topt),
+                                             data = .x,
+                                             iter = c(4,4,4,4),
+                                             start_lower = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'johnsonlewin_1946') - 10,
+                                             start_upper = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'johnsonlewin_1946') + 10,
+                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'johnsonlewin_1946'),
+                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'johnsonlewin_1946'),
+                                             supp_errors = 'Y',
+                                             convergence_count = FALSE)),
+         
+         modified_gauss =  map(data, ~nls_multstart(rate~modifiedgaussian_2006(temp = temp, rmax, topt, a, b),
+                                             data = .x,
+                                             iter = c(4,4,4,4),
+                                             start_lower = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'modifiedgaussian_2006') - 10,
+                                             start_upper = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'modifiedgaussian_2006') + 10,
+                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'modifiedgaussian_2006'),
+                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'modifiedgaussian_2006'),
+                                             supp_errors = 'Y',
+                                             convergence_count = FALSE)),   
+         
+         oneill =  map(data, ~nls_multstart(rate~oneill_1972(temp = temp, rmax, ctmax, topt, q10),
+                                             data = .x,
+                                             iter = c(4,4,4,4),
+                                             start_lower = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'oneill_1972') - 10,
+                                             start_upper = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'oneill_1972') + 10,
+                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'oneill_1972'),
+                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'oneill_1972'),
+                                             supp_errors = 'Y',
+                                             convergence_count = FALSE)), 
+         
+         pawar =  map(data, ~nls_multstart(rate~pawar_2018(temp = temp, r_tref, e, eh, topt, tref = 20),
+                                             data = .x,
+                                             iter = c(4,4,4,4),
+                                             start_lower = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'pawar_2018') - 10,
+                                             start_upper = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'pawar_2018') + 10,
+                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'pawar_2018'),
+                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'pawar_2018'),
+                                             supp_errors = 'Y',
+                                             convergence_count = FALSE)), 
+         
+         ratkowsky =  map(data, ~nls_multstart(rate~ratkowsky_1983(temp = temp, tmin, tmax, a, b),
+                                             data = .x,
+                                             iter = c(4,4,4,4),
+                                             start_lower = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'ratkowsky_1983') - 10,
+                                             start_upper = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'ratkowsky_1983') + 10,
+                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'ratkowsky_1983'),
+                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'ratkowsky_1983'),
+                                             supp_errors = 'Y',
+                                             convergence_count = FALSE)), 
+         
+         sharpeschool =  map(data, ~nls_multstart(rate~sharpeschoolfull_1981(temp = temp, r_tref, e, el, tl, eh, th, tref = 20),
+                                             data = .x,
+                                             iter = c(4,4,4,4,4,4),
+                                             start_lower = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'sharpeschoolfull_1981') - 10,
+                                             start_upper = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'sharpeschoolfull_1981') + 10,
+                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'sharpeschoolfull_1981'),
+                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'sharpeschoolfull_1981'),
+                                             supp_errors = 'Y',
+                                             convergence_count = FALSE)),     
+         
+         weibull =  map(data, ~nls_multstart(rate~weibull_1995(temp = temp, a, topt, b, c),
+                                             data = .x,
+                                             iter = c(4,4,4,4),
+                                             start_lower = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'weibull_1995') - 10,
+                                             start_upper = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'weibull_1995') + 10,
+                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'weibull_1995'),
+                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'weibull_1995'),
+                                             supp_errors = 'Y',
+                                             convergence_count = FALSE)),            
+         )
+
+# stack models
+s_stack <- select(s_fits, -data) %>%
+  pivot_longer(., names_to = 'model_name', values_to = 'fit', beta:weibull)
+
+# get parameters using tidy (no longer working)
+s_params <- s_stack %>%
+  mutate(., est = map(fit, tidy)) %>%
+  select(-fit) %>%
+  unnest(est)
+
+# get predictions using augment
+s_newdata <- tibble(temp = seq(min(s$temp), max(s$temp), length.out = 100))
+s_preds <- s_stack %>%
+  mutate(., preds = map(fit, augment, newdata = s_newdata)) %>%
+  select(-fit) %>%
+  unnest(preds)
+```
+
+## Compare models using AIC
+
+```{r}
+AIC(s_fits[[2]][[1]],s_fits[[3]][[1]], s_fits[[4]][[1]], s_fits[[5]][[1]], s_fits[[6]][[1]], s_fits[[7]][[1]], s_fits[[8]][[1]], s_fits[[9]][[1]], s_fits[[10]][[1]], s_fits[[11]][[1]], s_fits[[12]][[1]], s_fits[[13]][[1]])
+```
+beta and boatman are by far the best!
+
+
+## Graphing all:
+
+```{r}
+ggplot(s_preds, aes(temp, rate)) +
+  geom_point(aes(temp, rate), s) +
+  geom_line(aes(temp, .fitted), col = 'blue') +
+  facet_wrap(~model_name, scales = 'free', ncol = 5) +
+  theme_bw(base_size = 12) +
+  theme(legend.position = 'none',
+        strip.text = element_text(hjust = 0),
+        strip.background = element_blank()) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Survival rate',
+       title = 'Model fit comparison') +
+  geom_hline(aes(yintercept = 0), linetype = 2)
+```
+
+
+
+```{r}
+toxaxis_s <- tibble(temp = seq(-5, 50, length.out = 100))
+
+s_preds_two <- s_stack %>%
+  mutate(., preds = map(fit, augment, newdata = toxaxis_s)) %>%
+  select(-fit) %>%
+  unnest(preds)
+```
+
+
+```{r}
+survmodelcomp <- ggplot(s_preds_two[c(501:600, 801:900), ], aes(temp, rate)) +
+  geom_point(aes(temp, rate), s, color = "black") +
+  geom_line(aes(temp, .fitted, color = model_name)) +
+  theme_bw(base_size = 12) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Survival rate',
+       title = 'Model fit comparison', 
+       color = "Model name") +
+  geom_hline(aes(yintercept = 0), linetype = 2) + 
+  scale_color_manual(values = c("purple", "lime green"))
+
+survmodelcomp
+
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Figures/survmodelcomp.png", survmodelcomp, width = 8, height = 5)
+```
 
