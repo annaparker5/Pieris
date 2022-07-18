@@ -191,7 +191,7 @@ ggplot(data = pupalmeansyes, aes(x = Mean.Temp, y = Dev.Rate)) +
   geom_line(data = fitmodgauss[[1]], aes(x = temp, y = fitted))
 ```
 
-# Trying some bullshit
+# Modifying some bullshit
 
 
 ```{r}
@@ -203,22 +203,36 @@ colnames(d) <- c("temp", "rate")
 
 ```{r}
 d_fits <- nest(d, data = c(temp, rate)) %>%
-  mutate(beta = map(data, ~nls_multstart(rate~beta_2012(temp = temp, a, b, c, d, e),
+  mutate(modified_gaussian = map(data, ~nls_multstart(rate~modifiedgaussian_2006(temp = temp, rmax, topt, a, b),
                                          data = .x,
-                                         iter = c(6,6,6,6,6),
-                                         start_lower = get_start_vals(.x$temp, .x$rate, model_name = 'beta_2012') - 10,
-                                         start_upper = get_start_vals(.x$temp, .x$rate, model_name = 'beta_2012') + 10,
-                                         lower = get_lower_lims(.x$temp, .x$rate, model_name = 'beta_2012'),
-                                         upper = get_upper_lims(.x$temp, .x$rate, model_name = 'beta_2012'),
+                                         iter = c(4,4,4,4),
+                                         start_lower = get_start_vals(.x$temp, .x$rate, 
+                                                                      model_name = 'modifiedgaussian_2006') - 10,
+                                         start_upper = get_start_vals(.x$temp, .x$rate, 
+                                                                      model_name = 'modifiedgaussian_2006') + 10,
+                                         lower = get_lower_lims(.x$temp, .x$rate, model_name = 'modifiedgaussian_2006'),
+                                         upper = get_upper_lims(.x$temp, .x$rate, model_name = 'modifiedgaussian_2006'),
                                          supp_errors = 'Y',
                                          convergence_count = FALSE)),
-         gaussian = map(data, ~nls_multstart(rate~gaussian_1987(temp = temp, rmax, topt, a),
+         rezende = map(data, ~nls_multstart(rate~rezende_2019(temp = temp, q10, a, b, c),
                                              data = .x,
-                                             iter = c(4,4,4),
-                                             start_lower = get_start_vals(.x$temp, .x$rate, model_name = 'gaussian_1987') - 10,
-                                             start_upper = get_start_vals(.x$temp, .x$rate, model_name = 'gaussian_1987') + 10,
-                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'gaussian_1987'),
-                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'gaussian_1987'),
+                                             iter = c(4,4,4,4),
+                                             start_lower = get_start_vals(.x$temp, .x$rate, model_name = 'rezende_2019') - 10,
+                                             start_upper = get_start_vals(.x$temp, .x$rate, model_name = 'rezende_2019') + 10,
+                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'rezende_2019'),
+                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'rezende_2019'),
+                                             supp_errors = 'Y',
+                                             convergence_count = FALSE)),
+         
+         sharpeschool =  map(data, ~nls_multstart(rate~sharpeschoolfull_1981(temp = temp, r_tref, e, el, tl, eh, th, tref=29),
+                                             data = .x,
+                                             iter = c(4,4,4,4,4,4),
+                                             start_lower = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'sharpeschoolfull_1981') - 10,
+                                             start_upper = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'sharpeschoolfull_1981') + 10,
+                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'sharpeschoolfull_1981'),
+                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'sharpeschoolfull_1981'),
                                              supp_errors = 'Y',
                                              convergence_count = FALSE)),
          weibull = map(data, ~nls_multstart(rate~weibull_1995(temp = temp, a,topt,b,c),
@@ -233,9 +247,9 @@ d_fits <- nest(d, data = c(temp, rate)) %>%
 
 # stack models
 d_stack <- select(d_fits, -data) %>%
-  pivot_longer(., names_to = 'model_name', values_to = 'fit', beta:weibull)
+  pivot_longer(., names_to = 'model_name', values_to = 'fit', modified_gaussian:weibull)
 
-# get parameters using tidy
+# get parameters using tidy (no longer working)
 params <- d_stack %>%
   mutate(., est = map(fit, tidy)) %>%
   select(-fit) %>%
