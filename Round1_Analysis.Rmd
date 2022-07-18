@@ -408,7 +408,7 @@ ggsave("~/Desktop/GitHub/Pieris/Figures/masstimegraph.png", masstimegraph, width
 
 ## 1. Create survtime column by concat. time.eclose and time.death cols
 ```{r}
-
+data$Time.surv <- 
 ```
 
 
