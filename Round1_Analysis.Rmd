@@ -400,7 +400,7 @@ ggsave("~/Desktop/GitHub/Pieris/Figures/masstimegraph.png", masstimegraph, width
 ```
 
 
-# 5. Kaplan Meier
+# 5. Kaplan Meier OLD
 
 1. Create survtime column by concat. time.eclose and time.death cols
 2. Create total "did it die?" column
@@ -479,6 +479,95 @@ anova(coxmodel)
 
 Treatment does affect survival curves/probability. 
 
+# 6. Kaplan-Meier NEW
+
+**NOTE 7/18: Rerunning with pupation (or L-P int) as "exit"**
+
+
+1. Create survtime column by concat. time.pupa and time.death cols using a for loop 
+2. Create total "did it pupate?" column
+3. Create surv object 
+4. Run model fit of the surv object
+5. Plot in base r?
+6. Plot using survminer
+7. Coxph modeling
+
+## 1. Create survtime column using a for loop 
+```{r}
+data$Time.surv.pupa <- 0
+
+for(i in 1:length(data$CID)){
+  if(is.na(data[i, 17]) == FALSE){
+    data[i, 30] <- data[i, 17]
+  } else if(is.na(data[i, 17]) == TRUE){
+    data[i, 30] <- data[i, 27]
+  }
+}
+```
+
+**Fix missing data value later**
+
+## 2. Create "did it die?" column
+
+```{r}
+data$died.prepupa <- 0
+
+for(i in 1:length(data$CID)){
+  if(is.na(data[i, 17]) == TRUE){
+    data[i, 31] <- 1
+  } else if(is.na(data[1, 17]) == FALSE){
+    data[i, 31] <- 0
+  }
+}
+```
+
+## 3. Create Surv object
+
+```{r}
+survobject <- Surv(data$Time.surv.pupa, data$died.prepupa)
+
+View(survobject)
+```
+
+## 4. Run model fit
+
+```{r}
+survmodel <- survfit(survobject ~ Mean.Temp, data = data) 
+```
+
+## 5. Plot in base r, just to check
+
+```{r}
+plot(survmodel)
+```
+
+
+## 6. Plot using survminer
+
+```{r}
+survplotpupa <- ggsurvplot(fit = survmodel, 
+           data = data, 
+           xlab = "Days in experiment", 
+           ylab = "Survival probability",  
+           palette = c("purple", "#1E88E5", "lime green", "orange", "#D81B60")) 
+
+survplotlegendpupa <- survplotpupa$plot + theme(legend.position = "right")
+
+survplotlegendpupa
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Figures/KMsurvplotpupa.png", survplotlegendpupa, width = 8, height = 5)
+```
+
+## 7. Cox proportional hazard modeling
+
+```{r}
+coxmodel <- coxph(survobject ~ Mean.Temp, data = data)
+
+summary(coxmodel)
+anova(coxmodel)
+```
 
 # 6. Miscellaneous models
 
