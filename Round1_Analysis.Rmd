@@ -18,7 +18,10 @@ library(tidyr)
 library(ggplot2)
 library(lmerTest)
 library(Rmisc)
+library(survival)
+library(survminer)
 ```
+
 ```{r}
 data <- read.csv("~/Desktop/Github/Pieris/Data/CleanedRound1.csv", header = TRUE)
 
@@ -400,16 +403,81 @@ ggsave("~/Desktop/GitHub/Pieris/Figures/masstimegraph.png", masstimegraph, width
 # 5. Kaplan Meier
 
 1. Create survtime column by concat. time.eclose and time.death cols
-2. Create surv object 
-3. Run model fit of the surv object
-4. Plot in base r?
-5. Plot using survminer
-6. Coxph modeling
+2. Create total "did it die?" column
+3. Create surv object 
+4. Run model fit of the surv object
+5. Plot in base r?
+6. Plot using survminer
+7. Coxph modeling
 
 ## 1. Create survtime column by concat. time.eclose and time.death cols
 ```{r}
-data$Time.surv <- 
+data <- data %>%
+  mutate(Time.surv = coalesce(Time.eclose, Time.death))
 ```
+
+**Fix missing data value later**
+
+## 2. Create "did it die?" column
+
+```{r}
+data$died <- 0
+
+for(i in 1:length(data$CID)){
+  if(is.na(data[i, 27]) == TRUE){
+    data[i, 31] <- 0
+  } else if(is.na(data[1, 27]) == FALSE){
+    data[i, 31] <- 1
+  }
+}
+```
+
+## 3. Create Surv object
+
+```{r}
+survobject <- Surv(data$Time.surv, data$died)
+
+View(survobject)
+```
+
+## 4. Run model fit
+
+```{r}
+survmodel <- survfit(survobject ~ Mean.Temp, data = data) 
+```
+
+## 5. Plot in base r, just to check
+
+```{r}
+plot(survmodel)
+```
+
+## 6. Plot using survminer
+
+```{r}
+survplot <- ggsurvplot(fit = survmodel, 
+           data = data, 
+           xlab = "Days in experiment", 
+           ylab = "Survival probability",  
+           palette = c("purple", "#1E88E5", "lime green", "orange", "#D81B60")) 
+
+survplotlegend <- survplot$plot + theme(legend.position = "right")
+
+survplotlegend
+
+ggsave("~/Desktop/GitHub/Pieris/Figures/KMsurvplot.png", survplotlegend, width = 8, height = 5)
+```
+
+## 7. Cox proportional hazard modeling
+
+```{r}
+coxmodel <- coxph(survobject ~ Mean.Temp, data = data)
+
+summary(coxmodel)
+anova(coxmodel)
+```
+
+Treatment does affect survival curves/probability. 
 
 
 # 6. Miscellaneous models
