@@ -449,7 +449,6 @@ for(i in 1:length(augustpreds$.fitted)){
 ```
 
 
-
 # 3. Survival curves
 
 ```{r}
