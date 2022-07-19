@@ -175,11 +175,8 @@ Get the predictions out of the model using "augment"
 ```{r}
 temprange <- tibble(temp = seq(16, 34, length.out = 100))
 
-fittest <- data.frame(model_name = "modified_gaussian", 
-                      fit = fitmodgauss)
+predictions <- augment(fitmodgauss, newdata = temprange)
 
-predictions <- fitmodgauss %>%
-  mutate(., preds = map(fitmodgauss, augment, newdata = temprange))
 
 ```
 
@@ -360,6 +357,63 @@ modelcomp2
 ```{r}
 ggsave("~/Desktop/GitHub/Pieris/Figures/fittedmodelcomp2.png", modelcomp2, width = 8, height = 5)
 ```
+
+
+# 3. Getting the final dev rate curve 
+
+```{r}
+
+fitmodweibull <- nls_multstart(data = pupalmeansyes[, c(1, 8)], 
+                             Dev.Rate ~ weibull_1995(temp = Mean.Temp, a, topt, b, c), 
+                             iter = c(4, 4, 4, 4), 
+                             start_lower = get_start_vals(pupalmeansyes$Mean.Temp, pupalmeansyes$Dev.Rate,
+                                                          model_name = "weibull_1995") - 10,
+                             start_upper = get_start_vals(pupalmeansyes$Mean.Temp, pupalmeansyes$Dev.Rate,
+                                                          model_name = "weibull_1995") + 10, 
+                             lower = get_lower_lims(pupalmeansyes$Mean.Temp, pupalmeansyes$Dev.Rate,
+                                                    model_name = "weibull_1995"), 
+                             upper = get_upper_lims(pupalmeansyes$Mean.Temp, pupalmeansyes$Dev.Rate,
+                                                    model_name = "weibull_1995"), 
+                             supp_errors = 'Y',
+                             convergence_count = FALSE) 
+
+```
+
+```{r}
+summary(fitmodweibull)
+```
+
+## Load in our April and August temp data 
+
+```{r}
+april <- read.csv("~/Desktop/GitHub/Pieris/Data/simulated_36_-79_2_d_2022_4_1_5_31_inbetween.csv", header = TRUE)
+
+august <- read.csv("~/Desktop/GitHub/Pieris/Data/simulated_36_-79_2_d_2022_8_1_8_31_inbetween.csv", header = TRUE)
+```
+
+## Create our output datafile
+
+### Cut down by hour
+
+```{r}
+april <- april[april$V7 == 0, ]
+august <- august[august$V7 == 0, ]
+```
+
+```{r}
+apriltemps <- tibble(Mean.Temp = april$V1) ## Needs to be the same column name as in the model object
+
+augusttemps <- tibble(Mean.Temp = august$V1)
+```
+
+## Get predictions into that datafile
+
+```{r}
+aprilpreds <- augment(fitmodweibull, newdata = apriltemps)
+
+augustpreds <- augment(fitmodweibull, newdata = augusttemps)
+```
+
 
 
 # 3. Survival curves
