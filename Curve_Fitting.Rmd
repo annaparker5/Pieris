@@ -412,6 +412,40 @@ augusttemps <- tibble(Mean.Temp = august$V1)
 aprilpreds <- augment(fitmodweibull, newdata = apriltemps)
 
 augustpreds <- augment(fitmodweibull, newdata = augusttemps)
+
+
+aprilpreds$.fitted <- aprilpreds$.fitted / 24
+
+augustpreds$.fitted <- augustpreds$.fitted / 24
+
+```
+
+## Add dev rate until we hit 1, then extract total number of hours 
+
+```{r}
+apriloutput <- data.frame(hour = 1, .fitted = aprilpreds[1, 2])
+
+for(i in 1:length(aprilpreds$.fitted)){
+  if(apriloutput[i, 2] >= 1){
+    print(apriloutput[i, 1] / 24)
+  } else if(apriloutput[i, 2] < 1){
+    newoutput <- data.frame(hour = i+1, .fitted = (apriloutput[i, 2] + aprilpreds[i+1, 2]))
+    apriloutput <- rbind(apriloutput, newoutput)
+  }
+}
+```
+
+```{r}
+augustoutput <- data.frame(hour = 1, .fitted = augustpreds[1, 2])
+
+for(i in 1:length(augustpreds$.fitted)){
+  if(augustoutput[i, 2] >= 1){
+    print(augustoutput[i, 1] / 24)
+  } else if(augustoutput[i, 2] < 1){
+    newoutput <- data.frame(hour = i+1, .fitted = (augustoutput[i, 2] + augustpreds[i+1, 2]))
+    augustoutput <- rbind(augustoutput, newoutput)
+  }
+}
 ```
 
 
