@@ -23,6 +23,7 @@ library(tidyverse)
 round2 <- read.csv("~/Desktop/GitHub/Pieris/Data/CleanedRound2.csv", header = TRUE)
 
 round2 <- round2[round2$CID != 77, ]
+round2 <- round2[round2$CID != 46, ]
 ```
 
 # 1. Clean the data
@@ -102,6 +103,35 @@ pupalratemeans2 <- pupalratemeans2 %>%
 pupalmeans2 <- merge(pupalmeans2, pupalratemeans2, by = c("Treatment", "PupateOK", "N"))
 ```
 
+
+# Get new values with both successful and unsuccessful pupations
+
+Apr prediction: 33.42
+Aug prediction: 12.92
+
+
+```{r}
+pupaltimemeans2total <- summarySE(data = round2[round2$Surv.pupa == "Y", ], measurevar = "Time.pupa", groupvars = c("Treatment"))
+
+pupaltimemeans2total
+
+pupaltimemeans2total$Time.se <- pupaltimemeans2total$se
+
+pupaltimemeans2total <- pupaltimemeans2total %>%
+  select(Treatment, N, Time.pupa, Time.se)
+```
+
+
+```{r}
+pupalratemeans2total <- summarySE(data = round2[round2$Surv.pupa == "Y", ], measurevar = "Dev.Rate", groupvars = c("Treatment"))
+
+pupalratemeans2total
+
+pupalratemeans2total$Rate.se <- pupalratemeans2total$se
+
+pupalratemeans2total <- pupalratemeans2total %>%
+  select(Treatment, N, Dev.Rate, Rate.se)
+```
 
 
 

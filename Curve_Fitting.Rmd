@@ -3,15 +3,15 @@ title: "Curve Fitting"
 output: html_notebook
 ---
 
-Here, we will fit the dev rate and survival curves with rTPC. Then, we will make a function to pull from rTPC curves to compare to the April and August data. 
+Here, we will fit the dev rate curves with rTPC. Then, we will make a function to pull from rTPC curves to compare to the April and August data. 
 
 Roadmap: 
 
 0. Install packages and load in data
 1. Redo data manipulation
-2. Fit dev rate curve
-3. Fit survival curve
-4. 
+2. Fit dev rate curve to only successful pupations hourly
+3. Fit dev rate curve to all larval-pupal intermediates and successful pupations hourly
+4. Fit dev rate curve to all larval-pupal intermediates and successful pupations daily
 
 
 #0. Load in packages and data
@@ -75,7 +75,7 @@ pupalmeans <- merge(pupalmeans, pupaltimemeans, by = c("Mean.Temp", "PupateOk", 
 ```
 
 
-## Add in dvelopment rate
+## Add in development rate
 
 ```{r}
 data$Dev.Rate <- 1 / (data$Time.pupa)
@@ -96,6 +96,62 @@ pupalratemeans <- pupalratemeans %>%
 ```{r}
 pupalmeans <- merge(pupalmeans, pupalratemeans, by = c("Mean.Temp", "PupateOk", "N"))
 ```
+
+## Pupal means combined with LPI and pupa
+
+
+```{r}
+pupalmeanstotal <- summarySE(data = data[data$Surv.pupa == "Y", ], measurevar = "Mass.pupa", groupvars = c("Mean.Temp"))
+
+pupalmeanstotal
+
+pupalmeanstotal$Mass.se <- pupalmeanstotal$se
+
+pupalmeanstotal <- pupalmeanstotal %>%
+  select(Mean.Temp, N, Mass.pupa, Mass.se)
+
+
+```
+
+### Mean dev time and SE
+
+```{r}
+pupaltimemeanstotal <- summarySE(data = data[data$Surv.pupa == "Y", ], measurevar = "Time.pupa", groupvars = c("Mean.Temp"))
+
+pupaltimemeanstotal
+
+pupaltimemeanstotal$Time.se <- pupaltimemeanstotal$se
+
+pupaltimemeanstotal <- pupaltimemeanstotal %>%
+  select(Mean.Temp, N, Time.pupa, Time.se)
+```
+
+### Merge together
+
+```{r}
+pupalmeanstotal <- merge(pupalmeanstotal, pupaltimemeanstotal, by = c("Mean.Temp", "N"))
+```
+
+
+## Add in development rate
+
+```{r}
+pupalratemeanstotal <- summarySE(data = data[data$Surv.pupa == "Y", ], measurevar = "Dev.Rate", groupvars = c("Mean.Temp"))
+
+pupalratemeanstotal
+
+pupalratemeanstotal$Rate.se <- pupalratemeanstotal$se
+
+pupalratemeanstotal <- pupalratemeanstotal %>%
+  select(Mean.Temp, N, Dev.Rate, Rate.se)
+```
+
+
+```{r}
+pupalmeanstotal <- merge(pupalmeanstotal, pupalratemeanstotal, by = c("Mean.Temp", "N"))
+```
+
+
 
 ## Survival to pupation vs temp treatment 
 
@@ -133,7 +189,7 @@ survdata[4, 2] <- survpercsum[8, 3] / (survpercsum[8, 3] + survpercsum[7, 3])
 survdata[5, 2] <- survpercsum[10, 3] / (survpercsum[10, 3] + survpercsum[9, 3])
 ```
 
-# 2. Fit dev rate curve using rTPC
+# 2. Fit dev rate curve just for successful pupa using rTPC
 
 
 Change temp to not be a factor
@@ -396,14 +452,14 @@ august <- read.csv("~/Desktop/GitHub/Pieris/Data/simulated_36_-79_2_d_2022_8_1_8
 ### Cut down by hour
 
 ```{r}
-april <- april[april$V7 == 0, ]
-august <- august[august$V7 == 0, ]
+aprilhourly <- april[april$V7 == 0, ]
+augusthourly <- august[august$V7 == 0, ]
 ```
 
 ```{r}
-apriltemps <- tibble(Mean.Temp = april$V1) ## Needs to be the same column name as in the model object
+apriltemps <- tibble(Mean.Temp = aprilhourly$V1) ## Needs to be the same column name as in the model object
 
-augusttemps <- tibble(Mean.Temp = august$V1)
+augusttemps <- tibble(Mean.Temp = augusthourly$V1)
 ```
 
 ## Get predictions into that datafile
@@ -447,6 +503,295 @@ for(i in 1:length(augustpreds$.fitted)){
   }
 }
 ```
+
+
+# 3. Fitting the dev rate curve with all SurvPupa = Y individuals using rTPC
+
+```{r}
+pupalmeanstotal$Mean.Temp <- as.character(pupalmeanstotal$Mean.Temp)
+pupalmeanstotal$Mean.Temp <- as.numeric(pupalmeanstotal$Mean.Temp)
+```
+
+
+```{r}
+dtotal <- as.data.frame(cbind(pupalmeanstotal$Mean.Temp, pupalmeanstotal$Dev.Rate))
+
+colnames(dtotal) <- c("temp", "rate")
+```
+
+
+```{r}
+d_fits_total <- nest(dtotal, data = c(temp, rate)) %>%
+  mutate(modified_gaussian = map(data, ~nls_multstart(rate~modifiedgaussian_2006(temp = temp, rmax, topt, a, b),
+                                         data = .x,
+                                         iter = c(4,4,4,4),
+                                         start_lower = get_start_vals(.x$temp, .x$rate, 
+                                                                      model_name = 'modifiedgaussian_2006') - 10,
+                                         start_upper = get_start_vals(.x$temp, .x$rate, 
+                                                                      model_name = 'modifiedgaussian_2006') + 10,
+                                         lower = get_lower_lims(.x$temp, .x$rate, model_name = 'modifiedgaussian_2006'),
+                                         upper = get_upper_lims(.x$temp, .x$rate, model_name = 'modifiedgaussian_2006'),
+                                         supp_errors = 'Y',
+                                         convergence_count = FALSE)),
+         rezende = map(data, ~nls_multstart(rate~rezende_2019(temp = temp, q10, a, b, c),
+                                             data = .x,
+                                             iter = c(4,4,4,4),
+                                             start_lower = get_start_vals(.x$temp, .x$rate, model_name = 'rezende_2019') - 10,
+                                             start_upper = get_start_vals(.x$temp, .x$rate, model_name = 'rezende_2019') + 10,
+                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'rezende_2019'),
+                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'rezende_2019'),
+                                             supp_errors = 'Y',
+                                             convergence_count = FALSE)),
+         
+         sharpeschool =  map(data, ~nls_multstart(rate~sharpeschoolfull_1981(temp = temp, r_tref, e, el, tl, eh, th, tref=29),
+                                             data = .x,
+                                             iter = c(4,4,4,4,4,4),
+                                             start_lower = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'sharpeschoolfull_1981') - 10,
+                                             start_upper = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'sharpeschoolfull_1981') + 10,
+                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'sharpeschoolfull_1981'),
+                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'sharpeschoolfull_1981'),
+                                             supp_errors = 'Y',
+                                             convergence_count = FALSE)),
+         weibull = map(data, ~nls_multstart(rate~weibull_1995(temp = temp, a,topt,b,c),
+                                            data = .x,
+                                            iter = c(4,4,4,4),
+                                            start_lower = get_start_vals(.x$temp, .x$rate, model_name = 'weibull_1995') - 10,
+                                            start_upper = get_start_vals(.x$temp, .x$rate, model_name = 'weibull_1995') + 10,
+                                            lower = get_lower_lims(.x$temp, .x$rate, model_name = 'weibull_1995'),
+                                            upper = get_upper_lims(.x$temp, .x$rate, model_name = 'weibull_1995'),
+                                            supp_errors = 'Y',
+                                            convergence_count = FALSE)))
+
+# stack models
+d_stack_total <- select(d_fits_total, -data) %>%
+  pivot_longer(., names_to = 'model_name', values_to = 'fit', modified_gaussian:weibull)
+
+# get parameters using tidy (no longer working)
+#params <- d_stack %>%
+ # mutate(., est = map(fit, tidy)) %>%
+  #select(-fit) %>%
+  #unnest(est)
+
+# get predictions using augment
+newdatatotal <- tibble(temp = seq(min(dtotal$temp), max(dtotal$temp), length.out = 100))
+
+d_preds_total <- d_stack_total %>%
+  mutate(., preds = map(fit, augment, newdata = newdatatotal)) %>%
+  select(-fit) %>%
+  unnest(preds)
+```
+
+
+```{r}
+# plot fits
+ggplot(d_preds_total, aes(temp, rate)) +
+  geom_point(aes(temp, rate), dtotal) +
+  geom_line(aes(temp, .fitted), col = 'blue') +
+  facet_wrap(~model_name, scales = 'free', ncol = 5) +
+  theme_bw(base_size = 12) +
+  theme(legend.position = 'none',
+        strip.text = element_text(hjust = 0),
+        strip.background = element_blank()) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Development rate',
+       title = 'Model fit comparison') +
+  geom_hline(aes(yintercept = 0), linetype = 2)
+
+```
+
+### Compare using AIC
+
+
+
+
+```{r}
+AIC(d_fits_total[[2]][[1]],d_fits_total[[3]][[1]], d_fits_total[[4]][[1]], d_fits_total[[5]][[1]])
+```
+
+
+```{r}
+toxaxis <- tibble(temp = seq((-5), 50, length.out = 200))
+
+d_preds_total_two <- d_stack_total %>%
+  mutate(., preds = map(fit, augment, newdata = toxaxis)) %>%
+  select(-fit) %>%
+  unnest(preds)
+```
+
+```{r}
+ggplot(d_preds_total_two, aes(temp, rate)) +
+  geom_point(aes(temp, rate), dtotal) +
+  geom_line(aes(temp, .fitted), col = 'blue') +
+  facet_wrap(~model_name, scales = 'free', ncol = 5) +
+  theme_bw(base_size = 12) +
+  theme(legend.position = 'none',
+        strip.text = element_text(hjust = 0),
+        strip.background = element_blank()) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Development rate',
+       title = 'Model fit comparison') +
+  geom_hline(aes(yintercept = 0), linetype = 2)
+```
+
+```{r}
+
+fitmodweibulltotal <- nls_multstart(data = pupalmeanstotal[, c(1, 7)], 
+                             Dev.Rate ~ weibull_1995(temp = Mean.Temp, a, topt, b, c), 
+                             iter = c(4, 4, 4, 4), 
+                             start_lower = get_start_vals(pupalmeanstotal$Mean.Temp, pupalmeanstotal$Dev.Rate,
+                                                          model_name = "weibull_1995") - 10,
+                             start_upper = get_start_vals(pupalmeanstotal$Mean.Temp, pupalmeanstotal$Dev.Rate,
+                                                          model_name = "weibull_1995") + 10, 
+                             lower = get_lower_lims(pupalmeanstotal$Mean.Temp, pupalmeanstotal$Dev.Rate,
+                                                    model_name = "weibull_1995"), 
+                             upper = get_upper_lims(pupalmeanstotal$Mean.Temp, pupalmeanstotal$Dev.Rate,
+                                                    model_name = "weibull_1995"), 
+                             supp_errors = 'Y',
+                             convergence_count = FALSE) 
+
+```
+
+```{r}
+summary(fitmodweibulltotal)
+```
+
+## Get predictions into that datafile - hourly
+
+```{r}
+aprilpredstotal <- augment(fitmodweibulltotal, newdata = apriltemps)
+
+augustpredstotal <- augment(fitmodweibulltotal, newdata = augusttemps)
+
+
+aprilpredstotal$.fitted <- aprilpredstotal$.fitted / 24
+
+augustpredstotal$.fitted <- augustpredstotal$.fitted / 24
+
+```
+
+## Add dev rate until we hit 1, then extract total number of hours 
+
+```{r}
+apriloutputtotal <- data.frame(hour = 1, .fitted = aprilpredstotal[1, 2])
+
+for(i in 1:length(aprilpredstotal$.fitted)){
+  if(apriloutputtotal[i, 2] >= 1){
+    print(apriloutputtotal[i, 1] / 24)
+  } else if(apriloutputtotal[i, 2] < 1){
+    newoutput <- data.frame(hour = i+1, .fitted = (apriloutputtotal[i, 2] + aprilpredstotal[i+1, 2]))
+    apriloutputtotal <- rbind(apriloutputtotal, newoutput)
+  }
+}
+```
+
+```{r}
+augustoutputtotal <- data.frame(hour = 1, .fitted = augustpredstotal[1, 2])
+
+for(i in 1:length(augustpredstotal$.fitted)){
+  if(augustoutputtotal[i, 2] >= 1){
+    print(augustoutputtotal[i, 1] / 24)
+  } else if(augustoutputtotal[i, 2] < 1){
+    newoutput <- data.frame(hour = i+1, .fitted = (augustoutputtotal[i, 2] + augustpredstotal[i+1, 2]))
+    augustoutputtotal <- rbind(augustoutputtotal, newoutput)
+  }
+}
+```
+
+
+# 4. Fit all to daily temp means
+
+```{r}
+aprdailymeans <- data.frame(Mean.Temp = 0)
+
+april$V10 <- april$V8 + 1
+```
+
+```{r}
+for(i in 1:length(unique(april$V10))){
+  subset <- april[april$V10 == i, ]
+  meanval <- mean(subset$V1)
+  aprdailymeans <- rbind(aprdailymeans, meanval)
+}
+```
+
+```{r}
+aprdailymeans <- aprdailymeans[2:62, ]
+
+aprdailymeans <- tibble(Mean.Temp = aprdailymeans)
+```
+
+## Do the prediction part
+
+```{r}
+aprildailypreds <- augment(fitmodweibulltotal, newdata = aprdailymeans)
+```
+
+## Add dev rate until we hit 1, then extract total number of days
+
+```{r}
+aprildailyoutput <- data.frame(day = 1, .fitted = aprildailypreds[1, 2])
+
+for(i in 1:length(aprildailypreds$.fitted)){
+  if(aprildailyoutput[i, 2] >= 1){
+    print(aprildailyoutput[i, 1])
+  } else if(aprildailyoutput[i, 2] < 1){
+    newoutput <- data.frame(day = i+1, .fitted = (aprildailyoutput[i, 2] + aprildailypreds[i+1, 2]))
+    aprildailyoutput <- rbind(aprildailyoutput, newoutput)
+  }
+}
+```
+
+Much slower
+
+## AUGUST
+
+
+```{r}
+augdailymeans <- data.frame(Mean.Temp = 0)
+
+august$V10 <- august$V8 + 1
+```
+
+```{r}
+for(i in 1:length(unique(august$V10))){
+  subset <- august[august$V10 == i, ]
+  #print(subset)
+  meanval <- mean(subset$V1)
+  augdailymeans <- rbind(augdailymeans, meanval)
+}
+```
+
+```{r}
+augdailymeans <- augdailymeans[2:32, ]
+
+augdailymeans <- tibble(Mean.Temp = augdailymeans)
+```
+
+## Do the prediction part
+
+```{r}
+augustdailypreds <- augment(fitmodweibulltotal, newdata = augdailymeans)
+```
+
+## Add dev rate until we hit 1, then extract total number of days
+
+```{r}
+augustdailyoutput <- data.frame(day = 1, .fitted = augustdailypreds[1, 2])
+
+for(i in 1:length(augustdailypreds$.fitted)){
+  if(augustdailyoutput[i, 2] >= 1){
+    print(augustdailyoutput[i, 1])
+  } else if(augustdailyoutput[i, 2] < 1){
+    newoutput <- data.frame(day = i+1, .fitted = (augustdailyoutput[i, 2] + augustdailypreds[i+1, 2]))
+    augustdailyoutput <- rbind(augustdailyoutput, newoutput)
+  }
+}
+```
+
+Right on the money this time
+
 
 
 # 3. Survival curves
