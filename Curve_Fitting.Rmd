@@ -221,33 +221,7 @@ fitmodgauss <- nls_multstart(data = pupalmeansyes[, c(1, 8)],
 summary(fitmodgauss)
 ```
 
-```{r}
-fitmodgauss2 <- as.data.frame(fitmodgauss)
-```
-
-
-Get the predictions out of the model using "augment"
-
-```{r}
-temprange <- tibble(temp = seq(16, 34, length.out = 100))
-
-predictions <- augment(fitmodgauss, newdata = temprange)
-
-
-```
-
-
-
-
-Attempting to graph! 
-
-```{r}
-ggplot(data = pupalmeansyes, aes(x = Mean.Temp, y = Dev.Rate)) + 
-  geom_point() + 
-  geom_line(data = fitmodgauss[[1]], aes(x = temp, y = fitted))
-```
-
-## Modifying some bullshit
+## Modifying Lauren Buckley's code
 
 
 ```{r}
@@ -415,7 +389,7 @@ ggsave("~/Desktop/GitHub/Pieris/Figures/fittedmodelcomp2.png", modelcomp2, width
 ```
 
 
-# 3. Getting the final dev rate curve 
+## Getting the final dev rate curve 
 
 ```{r}
 
@@ -635,6 +609,9 @@ ggplot(d_preds_total_two, aes(temp, rate)) +
   geom_hline(aes(yintercept = 0), linetype = 2)
 ```
 
+### Fitting the weibull model
+
+
 ```{r}
 
 fitmodweibulltotal <- nls_multstart(data = pupalmeanstotal[, c(1, 7)], 
@@ -707,6 +684,8 @@ aprdailymeans <- data.frame(Mean.Temp = 0)
 
 april$V10 <- april$V8 + 1
 ```
+
+### Get daily mean temperatures
 
 ```{r}
 for(i in 1:length(unique(april$V10))){
