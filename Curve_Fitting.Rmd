@@ -470,16 +470,19 @@ weibullwithhist <-ggplot(data = solopreds) +
   theme_bw() +
   labs(x = 'Temperature (ºC)') +
   scale_y_continuous(name = "Development Rate", 
-                     sec.axis = sec_axis(trans = ~., name = "Counts of observed temperatures")) + 
+                     sec.axis = sec_axis(trans = ~., name = "Frequency of observed temperatures")) + 
   geom_histogram(data = apriltemps, aes(x = Mean.Temp, y = ..count.. / 5000), color = "lime green", 
                  fill = "lime green", alpha = .5) + 
   geom_histogram(data = augusttemps, aes(x = Mean.Temp, y = ..count.. / 5000), color = "turquoise", 
-                 fill = "turquoise", alpha = .5) + 
+                 fill = "turquoise", alpha = .5) 
 
 
 weibullwithhist
 
 
+```
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Figures/weibullwithhist.png", weibullwithhist, width = 8, height = 5)
 ```
 
 
