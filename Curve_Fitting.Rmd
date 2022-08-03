@@ -454,6 +454,35 @@ apriltemps <- tibble(Mean.Temp = aprilhourly$V1) ## Needs to be the same column 
 augusttemps <- tibble(Mean.Temp = augusthourly$V1)
 ```
 
+
+## TANGENT: Graph temp distributions compared to weibull curve 
+
+```{r}
+histtemps <- tibble(Mean.Temp = seq((-5), 50, length.out = 200))
+
+solopreds <- augment(fitmodweibull, newdata = histtemps)
+```
+
+```{r}
+weibullwithhist <-ggplot(data = solopreds) +
+  geom_line(aes(x = Mean.Temp, y = .fitted), color = "gray") +
+  geom_point(aes(x = Mean.Temp,y = Dev.Rate), data = pupalmeansyes, color = "black") +
+  theme_bw() +
+  labs(x = 'Temperature (ºC)') +
+  scale_y_continuous(name = "Development Rate", 
+                     sec.axis = sec_axis(trans = ~., name = "Counts of observed temperatures")) + 
+  geom_histogram(data = apriltemps, aes(x = Mean.Temp, y = ..count.. / 5000), color = "lime green", 
+                 fill = "lime green", alpha = .5) + 
+  geom_histogram(data = augusttemps, aes(x = Mean.Temp, y = ..count.. / 5000), color = "turquoise", 
+                 fill = "turquoise", alpha = .5) + 
+
+
+weibullwithhist
+
+
+```
+
+
 ## Get predictions into that datafile
 
 ```{r}
