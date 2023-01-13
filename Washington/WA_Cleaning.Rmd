@@ -95,12 +95,73 @@ write.csv(block1clean, file = "~/Desktop/GitHub/Pieris/Washington/DataWA/Cleaned
 
 Larval-pupal intermediates
 
+
+```{r}
+block2$PupateOK <- NA
+```
+
+```{r}
+for (i in 1:length(block2$PupateOK)) {
+  if(is.na(block2[i, 16]) == FALSE){
+    block2[i, 25] <- "N"
+  } else if(is.na(block2[1, 16]) == TRUE && is.na(block2[i, 14]) == FALSE){
+    block2[i, 25] <- "Y"
+  } else if(is.na(block2[1, 16]) == TRUE && is.na(block2[i, 14]) == TRUE){
+    block2[i, 25] <- NA
+  }
+}
+```
+
+
 Survival to pupation
+
+```{r}
+block2$Surv.pupa <- "N"
+```
+
+
+```{r}
+for (i in 1:length(block2$Surv.pupa)){
+  if(is.na(block2[i, 16]) == FALSE | is.na(block2[i, 14]) == FALSE){
+    block2[i, 26] <- "Y"
+  } else if (is.na(block2[i, 16]) == TRUE & is.na(block2[i, 14]) == TRUE){
+    block2[i, 26] <- "N"
+  }
+}
+```
+
+
 
 Survival to eclosion
 
+```{r}
+block2$Surv.eclos <- "N"
+```
+
+```{r}
+for (i in 1:length(block2$Surv.eclos)){
+  if(is.na(block2[i, 23]) == FALSE){
+    block2[i, 27] <- "Y"
+  } else if (is.na(block2[i, 23]) == TRUE){
+    block2[i, 27] <- "N"
+  }
+}
+```
+
 
 ## Write output file
+
+Clean up data files 
+
+```{r}
+block2clean <- block2 %>%
+  select(CID, Treatment, Mass.pupa, Mass.larvapupa.int, DaysHtoP, DaysPtoE, PupateOK, Surv.pupa, Surv.eclos)
+```
+
+```{r}
+write.csv(block2clean, file = "~/Desktop/GitHub/Pieris/Washington/DataWA/CleanedBlock2.csv")
+```
+
 
 # 3. Pupal data
 
@@ -108,7 +169,50 @@ Survival to eclosion
 
 Larval pupal intermediates
 
+
+```{r}
+pupa$PupateOK <- NA
+```
+
+```{r}
+for (i in 1:length(pupa$PupateOK)){
+  if(is.na(pupa[i, 12]) == FALSE){
+    pupa[i, 21] <- "N"
+  } else if(is.na(pupa[i, 12]) == TRUE && is.na(pupa[i, 10]) == FALSE){
+    pupa[i, 21] <- "Y"
+  } else if(is.na(pupa[i, 12]) == TRUE && is.na(pupa[i, 10]) == TRUE){
+    pupa[i, 21] <- NA
+  }
+}
+```
+
 Survival to eclosion
+
+
+```{r}
+pupa$Surv.eclos <- "N"
+```
+
+```{r}
+for (i in 1:length(pupa$Surv.eclos)){
+  if(is.na(pupa[i, 19]) == FALSE){
+    pupa[i, 22] <- "Y"
+  } else if(is.na(pupa[i, 19]) == TRUE){
+    pupa[i, 22] <- "N"
+  }
+}
+```
+
 
 ## Write output file 
 
+Clean up data files 
+
+```{r}
+pupaclean <- pupa %>%
+  select(MRID, Trt, Mass.Pupa, Mass.INT, DaysHtoP, DaysPtoE, PupateOK, Surv.eclos)
+```
+
+```{r}
+write.csv(pupaclean, file = "~/Desktop/GitHub/Pieris/Washington/DataWA/CleanedPupa.csv")
+```
