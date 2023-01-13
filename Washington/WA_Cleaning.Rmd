@@ -1,0 +1,47 @@
+---
+title: "WA_Cleaning "
+output: html_notebook
+---
+
+This notebook is going to clean all 3 datasets from the WA studies Dec22-Jan23, one dataset at a time. 
+
+0. Load in packages and data sets 
+1. Add in survival binaries (pupation, eclosion)
+2. Add in larval-pupal int binary 
+3. Save the output files 
+
+# 0. Load in packages and datasets
+
+```{r}
+library(dplyr)
+```
+
+```{r}
+block1 <- read.csv("~/Desktop/GitHub/Pieris/Washington/DataWA/WABlock1Dev.csv", header = TRUE)
+block2 <- read.csv("~/Desktop/GitHub/Pieris/Washington/DataWA/WABlock2Dev.csv", header = TRUE)
+pupa <- read.csv("~/Desktop/GitHub/Pieris/Washington/DataWA/WAPupa.csv", header = TRUE)
+```
+
+# 1. Block 1 first 
+
+## Make for loops 
+
+Larval-pupal intermediates
+
+```{r}
+block1$PupateOK <- NA
+```
+
+```{r}
+for (i in 1:length(block1$PupateOK)){
+  if(is.na(block1[i, 17]) == FALSE){
+    block1[i, 26] <- "N"
+  } else if(is.na(block1[i, 17]) == TRUE && is.na(block1[i, 15]) == FALSE){
+    block1[i, 26] <- "Y"
+  } else if(is.na(block1[i, 17]) == TRUE && is.na(block1[i, 15]) == TRUE){
+    block1[i, 26] <- NA
+  }
+}
+```
+
+
