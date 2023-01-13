@@ -89,5 +89,26 @@ block1clean <- block1 %>%
 write.csv(block1clean, file = "~/Desktop/GitHub/Pieris/Washington/DataWA/CleanedBlock1.csv")
 ```
 
+# 2. Block 2
 
+## Write for loops 
+
+Larval-pupal intermediates
+
+Survival to pupation
+
+Survival to eclosion
+
+
+## Write output file
+
+# 3. Pupal data
+
+## Write for loops
+
+Larval pupal intermediates
+
+Survival to eclosion
+
+## Write output file 
 
