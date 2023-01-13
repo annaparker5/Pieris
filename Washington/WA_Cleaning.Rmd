@@ -44,4 +44,50 @@ for (i in 1:length(block1$PupateOK)){
 }
 ```
 
+Survival to pupation
+
+```{r}
+block1$Surv.pupa <- "N"
+```
+
+```{r}
+for (i in 1:length(block1$Surv.pupa)){
+  if(is.na(block1[i, 17]) == FALSE | is.na(block1[i, 15]) == FALSE){
+    block1[i, 27] <- "Y"
+  } else if (is.na(block1[i, 17]) == TRUE & is.na(block1[i, 15]) == TRUE){
+    block1[i, 27] <- "N"
+  }
+}
+```
+
+Survival to eclosion
+
+```{r}
+block1$Surv.eclos <- "N"
+```
+
+```{r}
+for (i in 1:length(block1$Surv.eclos)) {
+  if(is.na(block1[i, 24]) == FALSE) {
+    block1[i, 28] <- "Y"
+  } else if (is.na(block1[i, 24]) == TRUE) {
+    block1[i, 28] <- "N"
+  }
+}
+```
+
+## Save as output file 
+
+Clean up data files 
+
+```{r}
+block1clean <- block1 %>%
+  select(CID, Treatment, Mass.pupa, Mass.larvapupa.int, DaysHtoP, DaysPtoE, PupateOK, Surv.pupa, Surv.eclos)
+```
+
+```{r}
+write.csv(block1clean, file = "~/Desktop/GitHub/Pieris/Washington/DataWA/CleanedBlock1.csv")
+```
+
+
 
