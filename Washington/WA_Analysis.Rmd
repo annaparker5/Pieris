@@ -1,0 +1,88 @@
+---
+title: "WA_Analysis"
+output: html_notebook
+---
+
+This script will graph and analyze all of the Washington data. 
+
+0. Load in data and packages
+1. Manipulate data
+2. Graph
+  a. Dev rate vs. dev temp - hatch to pupa
+  b. Dev rate vs. dev temp - pupa to eclos
+  c. Survival vs. dev temp - hatch to pupa
+  d. Survival vs. dev temp - pupa to eclos (just pupa data)
+  e. Survival vs. dev temp - pupa to eclos (block 1+2 data)
+3. Subsequent analyses as needed
+
+# 0. Load in data 
+
+```{r}
+library(tidyverse)
+library(Rmisc)
+```
+
+```{r}
+block1 <- read.csv("~/Desktop/GitHub/Pieris/Washington/DataWA/CleanedBlock1.csv", header = TRUE)
+block2 <- read.csv("~/Desktop/GitHub/Pieris/Washington/DataWA/CleanedBlock2.csv", header = TRUE)
+pupa <- read.csv("~/Desktop/GitHub/Pieris/Washington/DataWA/CleanedPupa.csv", header = TRUE)
+```
+
+# 1. Manipulate data
+
+Change temp to factor
+
+```{r}
+block1$Treatment <- as.factor(block1$Treatment)
+block2$Treatment <- as.factor(block2$Treatment)
+pupa$Trt <- as.factor(pupa$Trt)
+```
+
+Add block designation to datasets and combine
+
+```{r}
+block1$Block <- 1
+block2$Block <- 2
+```
+
+```{r}
+blockcomb <- rbind(block1, block2)
+```
+
+
+# 2. Graph
+
+## a. dev rate vs dev temp (H-P)
+
+Get dev rate (1/dev time)
+
+```{r}
+blockcomb$Dev.Rate.P <- 1/(blockcomb$DaysHtoP)
+```
+
+Summarize the data 
+
+```{r}
+devratepmeans <- summarySE(data = blockcomb[blockcomb$Surv.pupa == "Y", ], measurevar = "Dev.Rate.P", 
+                           groupvars = c("Treatment", "PupateOK"))
+
+devratepmeans
+```
+
+  Graph! 
+  
+```{r}
+devratepgraph <- ggplot(data = devratepmeans, aes(x = Treatment, y = Dev.Rate.P, group = PupateOK, shape = PupateOK)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_errorbar(aes(ymin = Dev.Rate.P - se, ymax = Dev.Rate.P + se), width = 0.3) + 
+  scale_shape_manual(values = c(21, 19)) + 
+  geom_line(aes(linetype = PupateOK)) + 
+  scale_linetype_manual(values = c("dotdash", "solid")) + 
+  labs(x = "Temperature Treatment", y = "Development Rate", shape = "Successful Pupation", linetype = "Successful Pupation")
+
+devratepgraph
+```
+  
+  
+  
