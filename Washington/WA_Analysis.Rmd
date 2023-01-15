@@ -84,5 +84,19 @@ devratepgraph <- ggplot(data = devratepmeans, aes(x = Treatment, y = Dev.Rate.P,
 devratepgraph
 ```
   
+## b. dev rate vs dev temp (p-e)
   
-  
+Get dev rate (1/dev time)
+
+```{r}
+blockcomb$Dev.Rate.E <- 1/(blockcomb$DaysPtoE)
+```
+
+Summarize the data 
+
+```{r}
+devrateemeans <- summarySE(data = blockcomb[blockcomb$Surv.eclos == "Y", ], measurevar = "Dev.Rate.E", 
+                           groupvars = c("Treatment"))
+
+devrateemeans
+```
