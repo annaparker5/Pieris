@@ -96,7 +96,7 @@ Summarize the data
 
 ```{r}
 devrateemeans <- summarySE(data = blockcomb[blockcomb$Surv.eclos == "Y", ], measurevar = "Dev.Rate.E", 
-                           groupvars = c("Treatment"))
+                           groupvars = c("Treatment", "Surv.eclos"))
 
 devrateemeans
 ```
@@ -105,11 +105,11 @@ devrateemeans
 graph!
 
 ```{r}
-devrateegraph <- ggplot(data = devrateemeans, aes(x = Treatment, y = Dev.Rate.E)) + 
+devrateegraph <- ggplot(data = devrateemeans, aes(x = Treatment, y = Dev.Rate.E, group = Surv.eclos)) + 
   theme_bw() + 
   geom_point(size = 3) + 
   geom_errorbar(aes(ymin = Dev.Rate.E - se, ymax = Dev.Rate.E + se), width = 0.3) + 
-  scale_shape_manual(values = c(21, 19)) + 
+  scale_shape_manual(values = c(21)) + 
   geom_line() + 
   scale_linetype_manual(values = c("solid")) + 
   labs(x = "Temperature Treatment", y = "Development Rate")
