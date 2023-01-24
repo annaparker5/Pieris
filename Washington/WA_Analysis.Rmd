@@ -189,8 +189,8 @@ survdata[10, 2] <- survpercsum[20, 4] / (survpercsum[20, 4] + survpercsum[19, 4]
 ```{r}
 survgraph <- ggplot(data = survdata, aes(x = Treatment, y = surv.perc, group = Block)) + 
   theme_bw() + 
-  geom_point(size = 2, aes(shape = Block)) +
-  scale_shape_manual(values = c(0, 3)) + 
+  geom_point(size = 3, aes(shape = Block)) +
+  scale_shape_manual(values = c(0, 2)) + 
   geom_line(aes(linetype = Block)) + 
   scale_linetype_manual(values = c("dashed", "dotted")) + 
   ylim(0, 1) + 
@@ -222,4 +222,42 @@ survdataeclos$Treatment <- as.factor(survdataeclos$Treatment)
 ### 3. Hard code it
 
 ### 4. Graph
+
+## e. 
+
+## f. Pupal mass, block 1+2 -- no LPIs
+
+### 1. Summarize the data 
+
+```{r}
+pupalmeans <- summarySE(data = blockcomb[blockcomb$PupateOK == "Y", ], 
+                        measurevar = "Mass.pupa", 
+                        groupvars = c("Treatment", "Block"))
+
+pupalmeans <- pupalmeans[1:10, ]
+
+pupalmeans$Block <- as.factor(pupalmeans$Block)
+
+pupalmeans
+```
+
+### 2. Graph! 
+
+```{r}
+pupalmassgraph <- ggplot(data = pupalmeans, aes(x = Treatment, y = Mass.pupa, group = Block, shape = Block)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_errorbar(aes(ymin = Mass.pupa - se, ymax = Mass.pupa + se), width = 0.2) + 
+  scale_shape_manual(values = c(0, 2)) + 
+  geom_line(aes(linetype = Block)) + 
+  scale_linetype_manual(values = c("dashed", "dotted")) + 
+  labs(x = "Temperature Treatment", y = "Pupal Mass", shape = "Block", linetype = "Block")
+
+pupalmassgraph
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Washington/FigsWA/pupalmass.png", pupalmassgraph, width = 8, height = 5)
+```
+
 
