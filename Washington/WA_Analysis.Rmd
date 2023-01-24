@@ -10,9 +10,10 @@ This script will graph and analyze all of the Washington data.
 2. Graph
   a. Dev rate vs. dev temp - hatch to pupa
   b. Dev rate vs. dev temp - pupa to eclos
-  c. Survival vs. dev temp - hatch to pupa
+  c. Survival vs. dev temp - hatch to pupa (split by block, block 1+2)
   d. Survival vs. dev temp - pupa to eclos (just pupa data)
-  e. Survival vs. dev temp - pupa to eclos (block 1+2 data)
+  e. Survival vs. dev temp - pupa to eclos (block 1+2 data) - lowest priority
+  f. Pupal mass vs. dev temp (split by block, block 1+2 data only)
 3. Subsequent analyses as needed
 
 # 0. Load in data 
@@ -68,8 +69,8 @@ devratepmeans <- summarySE(data = blockcomb[blockcomb$Surv.pupa == "Y", ], measu
 
 devratepmeans
 ```
-
-  Graph! 
+  
+ Graph!   
   
 ```{r}
 devratepgraph <- ggplot(data = devratepmeans, aes(x = Treatment, y = Dev.Rate.P, group = PupateOK, shape = PupateOK)) + 
@@ -83,6 +84,12 @@ devratepgraph <- ggplot(data = devratepmeans, aes(x = Treatment, y = Dev.Rate.P,
 
 devratepgraph
 ```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Washington/FigsWA/devrateHtoP.png", devratepgraph, width = 8, height = 5)
+```
+
+
   
 ## b. dev rate vs dev temp (p-e)
   
@@ -117,12 +124,15 @@ devrateegraph <- ggplot(data = devrateemeans, aes(x = Treatment, y = Dev.Rate.E,
 devrateegraph
 ```
 
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Washington/FigsWA/devratePtoE.png", devrateegraph, width = 8, height = 5)
+```
+
+
 ## 3.  Survival vs dev temp
 
 dev temp on x axis, survival on right axis (amt survived to each respective stage)
 
-
-```
 
 ## Survival to pupation vs temp treatment 
 
@@ -133,46 +143,83 @@ dev temp on x axis, survival on right axis (amt survived to each respective stag
 
 ### 1. Create summary table
 
+
 ```{r}
-survpercsum <- summarySE(data = data, 
+survpercsum <- summarySE(data = blockcomb, 
                          measurevar = "Mass.pupa", 
-                         groupvars = c("Mean.Temp", "Surv.pupa"))
+                         groupvars = c("Treatment", "Block", "Surv.pupa"))
+
+survpercsum
 ```
+
+
+
 
 ### 2. Create blank table
 
 ```{r}
-survdata <- data.frame(Mean.Temp = c(16, 21, 26, 30, 34), 
+survdata <- data.frame(Treatment = rep(c(16, 21, 26, 30, 34), times = 2), 
                        surv.perc = 0, 
-                       group = 1)
+                       Block = rep(c(1, 2), each = 5))
 
-survdata$Mean.Temp <- as.factor(survdata$Mean.Temp)
-survdata$group = as.factor(survdata$group)
+survdata$Treatment <- as.factor(survdata$Treatment)
+survdata$Block = as.factor(survdata$Block)
 ```
 
 ### 3. Hard code it
 
 ```{r}
-survdata[1, 2] <- survpercsum[2, 3] / (survpercsum[2, 3] + survpercsum[1, 3])
-survdata[2, 2] <- survpercsum[4, 3] / (survpercsum[4, 3] + survpercsum[3, 3])
-survdata[3, 2] <- survpercsum[6, 3] / (survpercsum[6, 3] + survpercsum[5, 3])
-survdata[4, 2] <- survpercsum[8, 3] / (survpercsum[8, 3] + survpercsum[7, 3])
-survdata[5, 2] <- survpercsum[10, 3] / (survpercsum[10, 3] + survpercsum[9, 3])
+survdata[1, 2] <- survpercsum[2, 4] / (survpercsum[2, 4] + survpercsum[1, 4])
+survdata[2, 2] <- survpercsum[6, 4] / (survpercsum[6, 4] + survpercsum[5, 4])
+survdata[3, 2] <- survpercsum[10, 4] / (survpercsum[10, 4] + survpercsum[9, 4])
+survdata[4, 2] <- survpercsum[14, 4] / (survpercsum[14, 4] + survpercsum[13, 4])
+survdata[5, 2] <- survpercsum[18, 4] / (survpercsum[18, 4] + survpercsum[17, 4])
+
+
+
+survdata[6, 2] <- survpercsum[4, 4] / (survpercsum[4, 4] + survpercsum[3, 4])
+survdata[7, 2] <- survpercsum[8, 4] / (survpercsum[8, 4] + survpercsum[7, 4])
+survdata[8, 2] <- survpercsum[12, 4] / (survpercsum[12, 4] + survpercsum[11, 4])
+survdata[9, 2] <- survpercsum[16, 4] / (survpercsum[16, 4] + survpercsum[15, 4])
+survdata[10, 2] <- survpercsum[20, 4] / (survpercsum[20, 4] + survpercsum[19, 4])
 ```
 
 ### 4. Graph it
 
 ```{r}
-survgraph <- ggplot(data = survdata, aes(x = Mean.Temp, y = surv.perc, group = group)) + 
+survgraph <- ggplot(data = survdata, aes(x = Treatment, y = surv.perc, group = Block)) + 
   theme_bw() + 
-  geom_point(size = 2) + 
-  geom_line() + 
+  geom_point(size = 2, aes(shape = Block)) +
+  scale_shape_manual(values = c(0, 3)) + 
+  geom_line(aes(linetype = Block)) + 
+  scale_linetype_manual(values = c("dashed", "dotted")) + 
   ylim(0, 1) + 
-  labs(x = "Temperature treatment", y = "Proportion survival to pupation")
+  labs(x = "Temperature treatment", y = "Proportion survival to pupation (including LPIs)")
 
 survgraph
 ```
 
 ```{r}
-ggsave("~/Desktop/GitHub/Pieris/Figures/survgraph.png", survgraph, width = 8, height = 5)
+ggsave("~/Desktop/GitHub/Pieris/Washington/FigsWA/survtopupgraph.png", survgraph, width = 8, height = 5)
 ```
+
+## d. 
+
+### 1. Summarize using summarySE 
+
+
+### 2. Make new dataframe
+
+```{r}
+survdataeclos <- data.frame(Treatment = c(16, 21, 26, 30, 34), 
+                            surv.eclos = 0, 
+                            group = 1)
+
+survdataeclos$Treatment <- as.factor(survdataeclos$Treatment)
+
+```
+
+### 3. Hard code it
+
+### 4. Graph
+
