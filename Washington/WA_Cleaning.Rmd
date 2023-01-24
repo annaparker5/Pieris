@@ -104,9 +104,9 @@ block2$PupateOK <- NA
 for (i in 1:length(block2$PupateOK)) {
   if(is.na(block2[i, 16]) == FALSE){
     block2[i, 25] <- "N"
-  } else if(is.na(block2[1, 16]) == TRUE && is.na(block2[i, 14]) == FALSE){
+  } else if(is.na(block2[i, 16]) == TRUE && is.na(block2[i, 14]) == FALSE){
     block2[i, 25] <- "Y"
-  } else if(is.na(block2[1, 16]) == TRUE && is.na(block2[i, 14]) == TRUE){
+  } else if(is.na(block2[i, 16]) == TRUE && is.na(block2[i, 14]) == TRUE){
     block2[i, 25] <- NA
   }
 }
