@@ -210,7 +210,7 @@ Clean up data files
 
 ```{r}
 pupaclean <- pupa %>%
-  select(MRID, Trt, Mass.Pupa, Mass.INT, DaysHtoP, DaysPtoE, PupateOK, Surv.eclos)
+  select(MRID, Trt, Mass.Pupa, Mass.INT, DaysHtoP, DaysPtoE, PupateOK, Mass.adult, Surv.eclos)
 ```
 
 ```{r}

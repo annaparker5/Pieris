@@ -207,12 +207,18 @@ ggsave("~/Desktop/GitHub/Pieris/Washington/FigsWA/survtopupgraph.png", survgraph
 
 ### 1. Summarize using summarySE 
 
+```{r}
+surveclossum <- summarySE(data = pupa, 
+                         measurevar = "Mass.Pupa", 
+                         groupvars = c("Trt", "Surv.eclos"))
 
+surveclossum
+```
 ### 2. Make new dataframe
 
 ```{r}
 survdataeclos <- data.frame(Treatment = c(16, 21, 26, 30, 34), 
-                            surv.eclos = 0, 
+                            surv.eclos.perc = 0, 
                             group = 1)
 
 survdataeclos$Treatment <- as.factor(survdataeclos$Treatment)
@@ -221,7 +227,39 @@ survdataeclos$Treatment <- as.factor(survdataeclos$Treatment)
 
 ### 3. Hard code it
 
+```{r}
+survdataeclos[1, 2] <- surveclossum[2, 3] / (surveclossum[2, 3] + surveclossum[1, 3])
+survdataeclos[2, 2] <- surveclossum[4, 3] / (surveclossum[4, 3] + surveclossum[3, 3])
+survdataeclos[3, 2] <- surveclossum[6, 3] / (surveclossum[6, 3] + surveclossum[5, 3])
+survdataeclos[4, 2] <- surveclossum[8, 3] / (surveclossum[8, 3] + surveclossum[7, 3])
+survdataeclos[5, 2] <- surveclossum[10, 3] / (surveclossum[10, 3] + surveclossum[9, 3])
+
+```
+
+
 ### 4. Graph
+
+```{r}
+surveclosgraph <- ggplot(data = survdataeclos, aes(x = Treatment, y = surv.eclos.perc)) + 
+  theme_bw() + 
+  geom_point(size = 3) +
+  scale_shape_manual(values = c(0, 2)) + 
+  geom_line() + 
+  scale_linetype_manual(values = c("dashed", "dotted")) + 
+  ylim(0, 1) + 
+  labs(x = "Pupal temperature treatment", y = "Proportion survival to eclosion")
+
+
+surveclosgraph
+
+
+```
+save!
+
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Washington/FigsWA/survtoeclgraph.png", surveclosgraph, width = 8, height = 5)
+```
 
 ## e. 
 
