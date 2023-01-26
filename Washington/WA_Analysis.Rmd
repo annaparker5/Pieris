@@ -75,6 +75,7 @@ devratepmeans
 ```{r}
 devratepgraph <- ggplot(data = devratepmeans, aes(x = Treatment, y = Dev.Rate.P, group = PupateOK, shape = PupateOK)) + 
   theme_bw() + 
+  ylim(.025, .096) +
   geom_point(size = 3) + 
   geom_errorbar(aes(ymin = Dev.Rate.P - se, ymax = Dev.Rate.P + se), width = 0.3) + 
   scale_shape_manual(values = c(21, 19)) + 
