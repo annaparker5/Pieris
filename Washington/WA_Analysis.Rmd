@@ -9,7 +9,7 @@ This script will graph and analyze all of the Washington data.
 1. Manipulate data
 2. Graph
   a. Dev rate vs. dev temp - hatch to pupa
-  b. Dev rate vs. dev temp - pupa to eclos
+  b. Dev rate vs. dev temp - pupa to eclos (blocks 1+2 and pupa)
   c. Survival vs. dev temp - hatch to pupa (split by block, block 1+2)
   d. Survival vs. dev temp - pupa to eclos (just pupa data)
   e. Survival vs. dev temp - pupa to eclos (block 1+2 data) - lowest priority
@@ -130,12 +130,45 @@ ggsave("~/Desktop/GitHub/Pieris/Washington/FigsWA/devratePtoE.png", devrateegrap
 ```
 
 
-## 3.  Survival vs dev temp
+### Pupal data
+
+
+```{r}
+pupa$Dev.Rate.E <- 1 / pupa$DaysPtoE
+```
+
+```{r}
+devrateemeanspupa <- summarySE(data = pupa[pupa$Surv.eclos == "Y", ], 
+                               measurevar = "Dev.Rate.E", 
+                               groupvars = c("Trt", "Surv.eclos"))
+
+devrateemeanspupa
+```
+
+```{r}
+devrateepupagraph <- ggplot(data = devrateemeanspupa, aes(x = Trt, y = Dev.Rate.E, group = Surv.eclos)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_errorbar(aes(ymin = Dev.Rate.E - se, ymax = Dev.Rate.E + se), width = 0.3) + 
+  scale_shape_manual(values = c(21)) + 
+  geom_line() + 
+  scale_linetype_manual(values = c("solid")) + 
+  labs(x = "Temperature Treatment", y = "Development Rate")
+
+devrateepupagraph
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Washington/FigsWA/devratePtoEpupa.png", devrateepupagraph, width = 8, height = 5)
+```
+
+
+## c.  Survival vs dev temp
 
 dev temp on x axis, survival on right axis (amt survived to each respective stage)
 
 
-## Survival to pupation vs temp treatment 
+### Survival to pupation vs temp treatment 
 
 1. Create summary table
 2. Create blank table for input
@@ -223,6 +256,7 @@ survdataeclos <- data.frame(Treatment = c(16, 21, 26, 30, 34),
                             group = 1)
 
 survdataeclos$Treatment <- as.factor(survdataeclos$Treatment)
+survdataeclos$group <- as.factor(survdataeclos$group)
 
 ```
 
@@ -261,6 +295,88 @@ ggsave("~/Desktop/GitHub/Pieris/Washington/FigsWA/survtoeclosgraph.png", survecl
 ```
 
 ## e. 
+
+### 1. Summarize using summarySE 
+
+```{r}
+surveclosblockssum <- summarySE(data = blockcomb[blockcomb$PupateOK == "Y", ], 
+                         measurevar = "Mass.pupa", 
+                         groupvars = c("Treatment", "Surv.eclos"))
+
+surveclosblockssum
+```
+
+### 2. Make new dataframe
+
+```{r}
+survdataeclosblocks <- data.frame(Treatment = c(16, 21, 26, 30, 34), 
+                            surv.eclos.perc = 0, 
+                            group = 2)
+
+survdataeclosblocks$Treatment <- as.factor(survdataeclosblocks$Treatment)
+survdataeclosblocks$group <- as.factor(survdataeclosblocks$group)
+
+```
+
+### 3. Hard code it
+
+```{r}
+survdataeclosblocks[1, 2] <- 0
+survdataeclosblocks[2, 2] <- surveclosblockssum[3, 3] / (surveclosblockssum[3, 3] + surveclosblockssum[2, 3])
+survdataeclosblocks[3, 2] <- surveclosblockssum[5, 3] / (surveclosblockssum[5, 3] + surveclosblockssum[4, 3])
+survdataeclosblocks[4, 2] <- surveclosblockssum[7, 3] / (surveclosblockssum[7, 3] + surveclosblockssum[6, 3])
+survdataeclosblocks[5, 2] <- surveclosblockssum[9, 3] / (surveclosblockssum[9, 3] + surveclosblockssum[8, 3])
+
+```
+
+
+### 4. Graph
+
+```{r}
+surveclosblocksgraph <- ggplot(data = survdataeclosblocks, aes(x = Treatment, y = surv.eclos.perc, group = group)) + 
+  theme_bw() + 
+  geom_point(size = 3) +
+  geom_line() + 
+  ylim(0, 1) + 
+  labs(x = "Rearing temperature treatment", y = "Proportion survival to eclosion")
+
+
+surveclosblocksgraph
+
+
+```
+save!
+
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Washington/FigsWA/survtoeclosblocksgraph.png", surveclosblocksgraph, width = 8, height = 5)
+```
+
+
+### SAME GRAPH
+
+```{r}
+surveclosBOTHgraph <- ggplot(data = survdataeclosblocks, aes(x = Treatment, y = surv.eclos.perc, group = group, linetype = group, shape = group)) + 
+  theme_bw() + 
+  geom_point(size = 3) +
+  geom_line() + 
+  ylim(0, 1) + 
+  labs(x = "Temperature treatment", y = "Proportion survival to eclosion", group = "Experiment", linetype = "Experiment", shape = "Experiment") + 
+  geom_point(data = survdataeclos, size = 3) + 
+  geom_line(data = survdataeclos) + 
+  scale_linetype_manual(values = c("dashed", "dotted"), labels = c("Pupal Expt.", "Blocks 1+2")) + 
+  scale_shape_manual(values = c(5,4), labels = c("Pupal Expt.", "Blocks 1+2"))
+  
+surveclosBOTHgraph  
+```
+
+#### save
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Washington/FigsWA/survtoeclosBOTHgraph.png", surveclosBOTHgraph, width = 8, height = 5)
+```
+
+
 
 ## f. Pupal mass, block 1+2 -- no LPIs
 
