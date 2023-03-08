@@ -1,0 +1,235 @@
+---
+title: "Making survival dataset"
+output: html_notebook
+---
+
+This notebook makes the necessary .csv file to use in survival analyses. 
+
+
+0. Load in the data
+1. Manipulate columns as necessary
+2. Select the relevant columns
+3. Combine and output
+
+
+```{r}
+library(dplyr)
+library(lubridate)
+```
+
+
+## 0. Load in the data
+
+```{r}
+NC <- read.csv("~/Desktop/GitHub/Pieris/Data/CleanedRound1.csv", header = T)
+WA1 <- read.csv("~/Desktop/GitHub/Pieris/Washington/DataWA/CleanedBlock1.csv", header = T)
+WA1wide <- read.csv("~/Desktop/GitHub/Pieris/Washington/DataWA/WABlock1Dev.csv", header = T)
+WA2 <- read.csv("~/Desktop/GitHub/Pieris/Washington/DataWA/CleanedBlock2.csv", header = T)
+WA2wide <- read.csv("~/Desktop/GitHub/Pieris/Washington/DataWA/WABlock2Dev.csv", header = T)
+```
+
+
+## 1. Manipulate columns as necessary
+
+NC pop
+
+```{r}
+NC$Time.prepupal.death <- NA
+```
+
+```{r}
+for(i in 1:length(NC$Time.prepupal.death)) { 
+  if (NC[i, 19] == "Y"){
+    NC[i, 30] <- NA
+  } else if (NC[i, 19] != "Y"){
+    NC[i, 30] <- NC[i, 27]
+  }
+}
+```
+
+
+Washington pops:
+
+
+```{r}
+# Internal process of the loop to convert days to dates
+expt_day <- function(start.date, date){
+  date <- mdy(date)
+  start <- mdy(start.date)
+  diff <- yday(date) - yday(start)
+
+  return(diff)
+}
+
+# Code for the loop itself
+loop <- function(start.date, date.list){
+  days <- rep(NA, length(date.list))
+  for (i in 1:(length(days))){
+    days[i] <- expt_day(start.date = start.date, date = date.list[i])
+  }
+  return(days)
+}
+```
+
+
+We need to combine all of these different "death" conditions and select only the ones that died prior to pupation. Let's write a giant for loop, so that we don't have to do it by hand in Excel. 
+
+```{r}
+WA1wide$Prepupal.death <- NA
+
+WA1wide[22, 15] <- 150
+```
+
+
+```{r}
+for (i in 1:length(WA1wide$Prepupal.death)){
+  if (is.na(WA1wide[i, 15]) == FALSE){
+    WA1wide[i, 26] <- NA
+  } else if (is.na(WA1wide[i, 15]) == TRUE){
+    if (is.na(WA1wide[i, 17]) == FALSE) {
+      WA1wide[i, 26] <- WA1wide[i, 16]
+    } else if (is.na(WA1wide[i, 17]) == TRUE) {
+      WA1wide[i, 26] <- WA1wide[i, 21]
+    }
+  
+  }
+  
+}  
+```
+
+
+
+
+```{r}
+WA1wide$day.hatch <- loop(start.date = "11/16/2022", date.list = WA1wide$Date.hatch)
+WA1wide$Prepupal.death.day <- loop(start.date = "11/16/2022", date.list = WA1wide$Prepupal.death)
+```
+
+**Above code is busted if it crosses the year mark. Gotta add 365 to the negative numbers**
+
+```{r}
+for (i in 1:length(WA1wide$Prepupal.death.day)){
+  if (is.na(WA1wide[i, 28]) == FALSE){
+      if (WA1wide[i, 28] < 0) {
+      WA1wide[i, 28] <- WA1wide[i, 28] + 365
+    } else if (WA1wide[i, 28] >= 0) {
+     WA1wide[i, 28] <- WA1wide[i, 28]
+    }
+  } else if (is.na(WA1wide[i, 28]) == TRUE){
+    WA1wide[i, 28] <- NA
+  }
+
+}
+```
+
+
+
+```{r}
+WA1wide$Age.prepupal.death <- WA1wide$Prepupal.death.day - WA1wide$day.hatch
+```
+
+**REPEAT FOR WA2**
+
+```{r}
+WA2wide$Prepupal.death <- NA
+
+WA2wide[55, 14] <- 150
+```
+
+
+```{r}
+for (i in 1:length(WA2wide$Prepupal.death)){
+  if (is.na(WA2wide[i, 14]) == FALSE){
+    WA2wide[i, 25] <- NA
+  } else if (is.na(WA2wide[i, 14]) == TRUE){
+    if (is.na(WA2wide[i, 16]) == FALSE) {
+      WA2wide[i, 25] <- WA2wide[i, 15]
+    } else if (is.na(WA2wide[i, 16]) == TRUE) {
+      WA2wide[i, 25] <- WA2wide[i, 20]
+    }
+  
+  }
+  
+}  
+```
+
+
+```{r}
+WA2wide$day.hatch <- loop(start.date = "11/30/2022", date.list = WA2wide$Date.hatch)
+WA2wide$Prepupal.death.day <- loop(start.date = "11/30/2022", date.list = WA2wide$Prepupal.death)
+```
+
+**Above code is busted if it crosses the year mark. Gotta add 365 to the negative numbers**
+
+```{r}
+for (i in 1:length(WA2wide$Prepupal.death.day)){
+  if (is.na(WA2wide[i, 27]) == FALSE){
+      if (WA2wide[i, 27] < 0) {
+      WA2wide[i, 27] <- WA2wide[i, 27] + 365
+    } else if (WA2wide[i, 27] >= 0) {
+     WA2wide[i, 27] <- WA2wide[i, 27]
+    }
+  } else if (is.na(WA2wide[i, 27]) == TRUE){
+    WA2wide[i, 27] <- NA
+  }
+
+}
+```
+
+
+
+```{r}
+WA2wide$Age.prepupal.death <- WA2wide$Prepupal.death.day - WA2wide$day.hatch
+```
+
+
+## 2. Select the relevant columns
+
+```{r}
+NC <- NC %>%
+  select(CID = CID, Treatment = Mean.Temp, Age.death = Time.prepupal.death, Surv.pupa, PupateOK = PupateOk, 
+         Age.pupa = Time.pupa)
+
+NC$Expt <- "NC"
+```
+
+```{r}
+WA1wide <- WA1wide %>%
+  select(CID = CID, Treatment = Treatment, Age.death = Age.prepupal.death)
+
+WA1 <- WA1 %>%
+  select(CID = CID, Treatment = Treatment, Surv.pupa, PupateOK, Age.pupa = DaysHtoP)
+
+WA1merge <- merge(WA1wide, WA1, by = c("CID", "Treatment"))
+
+WA1merge$Expt <- "WA1"
+```
+
+
+```{r}
+WA2wide <- WA2wide %>%
+  select(CID = CID, Treatment = Treatment, Age.death = Age.prepupal.death)
+
+WA2 <- WA2 %>%
+  select(CID = CID, Treatment = Treatment, Surv.pupa, PupateOK, Age.pupa = DaysHtoP)
+
+WA2merge <- merge(WA2wide, WA2, by = c("CID", "Treatment"))
+
+WA2merge$Expt <- "WA2"
+```
+
+
+## 3. Combine and output
+
+```{r}
+output <- rbind(NC, WA1merge)
+
+output <- rbind(output, WA2merge)
+```
+
+
+```{r}
+write.csv(output, file = "~/Desktop/GitHub/Pieris/CombSurvtoPupation.csv")
+```
+
+
