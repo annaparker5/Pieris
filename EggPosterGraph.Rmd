@@ -1,0 +1,144 @@
+---
+title: "Making a graph for Madison's poster"
+output: html_notebook
+---
+
+
+## Load packages
+
+```{r}
+library(ggplot2)
+library(grid)
+library(RColorBrewer)
+library(Rmisc)
+```
+
+## Load data
+
+```{r}
+hatch <- read.csv("~/Desktop/MSEgg_datasheet.csv", header = TRUE)
+hatchyes <- hatch[hatch$Hours_calculated > 0, ]
+```
+
+# For those that survived: Hatch rate
+
+
+## Calculate hatching rate (1/time)
+
+```{r}
+hatchyes$Hatch_rate <- 1 / hatchyes$Hours_calculated
+```
+
+
+## Summarize by column
+
+```{r}
+ratemeans <- summarySE(data = hatchyes, 
+                       groupvars = "Column", 
+                       measurevar = "Hatch_rate")
+
+ratemeans$Column <- as.factor(ratemeans$Column)
+```
+
+
+## Giant for loop
+
+```{r}
+
+make_gradient <- function(deg = 45, n = 100, cols = blues9) {
+  cols <- colorRampPalette(cols)(n + 1)
+  rad <- deg / (180 / pi)
+  mat <- matrix(
+    data = rep(seq(0, 1, length.out = n) * cos(rad), n),
+    byrow = TRUE,
+    ncol = n
+  ) +
+  matrix(
+    data = rep(seq(0, 1, length.out = n) * sin(rad), n),
+    byrow = FALSE,
+    ncol = n
+  )
+  mat <- mat - min(mat)
+  mat <- mat / max(mat)
+  mat <- 1 + mat * n
+  mat <- matrix(data = cols[round(mat)], ncol = n)
+  grid::rasterGrob(
+    image = mat,
+    width = unit(1, "npc"),
+    height = unit(1, "npc"), 
+    interpolate = TRUE
+  )
+}
+```
+
+```{r}
+gradientloop <- make_gradient(
+  deg = 0, n = 500, cols = brewer.pal(7, "RdYlBu")
+)
+```
+
+```{r}
+rategraph <- ggplot(ratemeans, aes(x = Column, y = Hatch_rate)) +
+  theme_bw() + 
+  annotation_custom(gradientloop, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) + 
+  geom_point(color = "black", size = 3) + 
+  geom_errorbar(aes(ymin = Hatch_rate - se, ymax = Hatch_rate + se), width = 0.3) + 
+  labs(x = "Column of plate", y = "Hatch rate")
+     
+rategraph     
+```
+
+## Save graph
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Figures/MSeggrategraph.png", rategraph, width = 8, height = 5)
+```
+
+
+
+# Survival percentages across all individuals 
+
+
+## Add "did it hatch" column
+
+```{r}
+hatch$Hatch_success <- 0
+
+for(i in 1:length(hatch$ID)){
+  if(hatch[i, 9] > 0){
+    hatch[i, 10] <- 1
+  } else if(hatch[i, 9] <= 0){
+    hatch[i, 10] <- 0.01
+  }
+}
+
+
+```
+
+```{r}
+survmeans <- summarySE(hatch, 
+                       measurevar = "Hatch_success", 
+                       groupvars = "Column")
+
+survmeans$Column <- as.factor(survmeans$Column)
+```
+
+## Graph it
+
+```{r}
+survgraph <- ggplot(survmeans, aes(x = Column, y = Hatch_success)) +
+  theme_bw() + 
+  annotation_custom(gradientloop, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) + 
+  geom_col() + 
+  labs(x = "Column of plate", y = "Proportion of eggs hatched")  
+
+     
+survgraph     
+```
+
+## Save graph
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Figures/MSeggsurvgraph.png", survgraph, width = 8, height = 5)
+```
+
