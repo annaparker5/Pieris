@@ -163,6 +163,42 @@ ggsave("~/Desktop/GitHub/Pieris/Washington/FigsWA/devratePtoEpupa.png", devratee
 ```
 
 
+### Comparing larval and pupal expts -- pupa dev rate
+
+```{r}
+devrateemeans$group <- 1
+devrateemeanspupa$group <- 2
+
+colnames(devrateemeans)[1] <- "Trt"
+  
+
+
+devrateeboth <- rbind(devrateemeans, devrateemeanspupa)
+
+devrateeboth$group <- as.factor(devrateeboth$group)
+```
+
+```{r}
+devrateeBOTHgraph <- ggplot(data = devrateeboth, aes(x = Trt, y = Dev.Rate.E, group = group, linetype = group, shape = group)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_errorbar(aes(ymin = Dev.Rate.E - se, ymax = Dev.Rate.E + se), width = 0.3, linetype = "solid") + 
+  geom_line() + 
+  labs(x = "Temperature Treatment", y = "Development Rate", group = "Experiment", linetype = "Experiment", shape = "Experiment") + 
+  scale_linetype_manual(values = c("dotted", "dashed"), labels = c("Blocks 1+2", "Pupal Expt." )) + 
+  scale_shape_manual(values = c(4,5), labels = c("Blocks 1+2", "Pupal Expt."))
+
+devrateeBOTHgraph
+
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Washington/FigsWA/devratePtoEBOTH.png", devrateeBOTHgraph, width = 8, height = 5)
+```
+
+
+
+
 ## c.  Survival vs dev temp
 
 dev temp on x axis, survival on right axis (amt survived to each respective stage)
