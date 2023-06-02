@@ -1,0 +1,167 @@
+---
+title: "Comparing NC and WA data"
+output: html_notebook
+---
+
+## 0. Load packages and data
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(Rmisc)
+```
+
+```{r}
+comb <- read.csv("~/Desktop/GitHub/Pieris/CombSurvtoPupation.csv", header = TRUE)
+```
+
+
+## 1. larval dev rate vs. temp 
+  - Include LPIs 
+  
+```{r}
+comb$Dev.rate <- 1/comb$Age.pupa
+```
+
+
+```{r}
+devratemeans <- summarySE(data = comb[comb$Surv.pupa == "Y", ], 
+                               measurevar = "Dev.rate", 
+                               groupvars = c("Treatment", "Expt"))
+
+devratemeans
+
+devratemeans$Treatment <- as.factor(devratemeans$Treatment)
+```
+
+
+
+```{r}
+NCWAdevrate <- ggplot(data = devratemeans, aes(x = Treatment, y = Dev.rate, group = Expt, linetype = Expt, 
+                                       shape = Expt)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_line() +
+  labs(x = "Temperature Treatment", y = "Development Rate", group = "Experiment", linetype = "Experiment", 
+       shape = "Experiment") +
+  scale_linetype_manual(values = c("solid", "dashed", "dotted")) + 
+  scale_shape_manual(values = c(19, 2, 5)) + 
+  geom_errorbar(aes(ymin = Dev.rate - se, ymax = Dev.rate + se), width = 0.3, linetype = "solid")
+
+NCWAdevrate
+  
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/NCWAdevrate.png", NCWAdevrate, width = 8, height = 5)
+```
+
+
+
+## 2. Pupal mass vs. temp
+  - Exclude LPIs
+  
+
+```{r}
+massmeans <- summarySE(data = comb[comb$Surv.pupa == "Y" & comb$PupateOK == "Y", ], 
+                               measurevar = "Mass.pupa", 
+                               groupvars = c("Treatment", "Expt"))
+
+massmeans
+
+massmeans$Treatment <- as.factor(massmeans$Treatment)
+```
+
+
+
+```{r}
+NCWAmass <- ggplot(data = massmeans, aes(x = Treatment, y = Mass.pupa, group = Expt, linetype = Expt, 
+                                       shape = Expt)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_line() +
+  labs(x = "Temperature Treatment", y = "Pupal Mass", group = "Experiment", linetype = "Experiment", 
+       shape = "Experiment") +
+  scale_linetype_manual(values = c("solid", "dashed", "dotted")) + 
+  scale_shape_manual(values = c(19, 2, 5)) + 
+  geom_errorbar(aes(ymin = Mass.pupa - se, ymax = Mass.pupa + se), width = 0.3, linetype = "solid")
+
+NCWAmass
+  
+```
+
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/NCWAmass.png", NCWAmass, width = 8, height = 5)
+```
+
+
+## 3. Surv to pupation vs. temp
+  - Include LPIs
+  
+
+```{r}
+survpercsum <- summarySE(data = comb, 
+                         measurevar = "CID", 
+                         groupvars = c("Treatment", "Expt", "Surv.pupa"))
+
+survpercsum
+```
+
+
+```{r}
+survdata <- data.frame(Treatment = rep(c(16, 21, 26, 30, 34), times = 3), 
+                       surv.perc = 0, 
+                       Expt = rep(c("NC", "WA1", "WA2"), each = 5))
+
+survdata$Treatment <- as.factor(survdata$Treatment)
+```
+
+
+```{r}
+survdata[1, 2] <- survpercsum[2, 4] / (survpercsum[2, 4] + survpercsum[1, 4])
+survdata[2, 2] <- survpercsum[8, 4] / (survpercsum[8, 4] + survpercsum[7, 4])
+survdata[3, 2] <- survpercsum[14, 4] / (survpercsum[14, 4] + survpercsum[13, 4])
+survdata[4, 2] <- survpercsum[20, 4] / (survpercsum[20, 4] + survpercsum[19, 4])
+survdata[5, 2] <- survpercsum[26, 4] / (survpercsum[26, 4] + survpercsum[25, 4])
+
+
+
+survdata[6, 2] <- survpercsum[4, 4] / (survpercsum[4, 4] + survpercsum[3, 4])
+survdata[7, 2] <- survpercsum[10, 4] / (survpercsum[10, 4] + survpercsum[9, 4])
+survdata[8, 2] <- survpercsum[16, 4] / (survpercsum[16, 4] + survpercsum[15, 4])
+survdata[9, 2] <- survpercsum[22, 4] / (survpercsum[22, 4] + survpercsum[21, 4])
+survdata[10, 2] <- survpercsum[28, 4] / (survpercsum[28, 4] + survpercsum[27, 4])
+
+
+survdata[11, 2] <- survpercsum[6, 4] / (survpercsum[6, 4] + survpercsum[5, 4])
+survdata[12, 2] <- survpercsum[12, 4] / (survpercsum[12, 4] + survpercsum[11, 4])
+survdata[13, 2] <- survpercsum[18, 4] / (survpercsum[18, 4] + survpercsum[17, 4])
+survdata[14, 2] <- survpercsum[24, 4] / (survpercsum[24, 4] + survpercsum[23, 4])
+survdata[15, 2] <- survpercsum[30, 4] / (survpercsum[30, 4] + survpercsum[29, 4])
+```
+
+
+
+
+```{r}
+NCWAsurv <- ggplot(data = survdata, aes(x = Treatment, y = surv.perc, group = Expt, linetype = Expt, 
+                                       shape = Expt)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_line() +
+  labs(x = "Temperature Treatment", y = "Proportion surviving to pupation", group = "Experiment", linetype = "Experiment", 
+       shape = "Experiment") +
+  scale_linetype_manual(values = c("solid", "dashed", "dotted")) + 
+  scale_shape_manual(values = c(19, 2, 5))
+
+NCWAsurv
+  
+```
+
+
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/NCWAsurv.png", NCWAsurv, width = 8, height = 5)
+```
+
