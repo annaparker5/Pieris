@@ -5,6 +5,7 @@ This repo contains several datafiles, figure outputs, and analysis scripts for t
 ## North Carolina folder
 1. **NC Larval and Realistic Temps** Folder: contains all the data and analysis from summer 2022 with Pieris larvae reared at 16,21,26,30, and 34 degrees, the modeling that followed, and testing this model with April and August temperatures
   1a. **Data** folder: contains all raw and processed datafiles called in scripts
+    - Apr1toMay31.csv: Raw datafile from 
   1b. **Figures** folder: contains all outputted ggplot figures created by scripts
   1c. PossibleThermalConditions.Rmd: shows different thermal scenarios to choose     between for the second round temperature regimes 
   1d. RealWeatherConditions.Rmd: creates the file necessary for running the program   on the chamber for the April 2020 and August 2020 weather patterns
