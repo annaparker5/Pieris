@@ -5,7 +5,19 @@ This repo contains several datafiles, figure outputs, and analysis scripts for t
 ## North Carolina folder
 1. **NC Larval and Realistic Temps** Folder: contains all the data and analysis from summer 2022 with Pieris larvae reared at 16,21,26,30, and 34 degrees, the modeling that followed, and testing this model with April and August temperatures
   1a. **Data** folder: contains all raw and processed datafiles called in scripts
-    - Apr1toMay31.csv: Raw datafile from 
+    - Apr1toMay31.csv: Raw datafile from the weather station at RDU Airport on temperatures from April 1, 2020 to May 31, 2020
+    - Aug1toAug31.csv: Raw datafile from the weather station at RDU Airport on temperatures from August 1, 2020 to August 31, 2020
+    - CleanedRound1.csv: Output datafile from Round1_Cleaning.Rmd which includes empty columns for later calculations
+    - CleanedRound2.csv: Datafile for realistic temperature treatments which includes empty columns for later calculations
+    - CleanedRound2Old.csv: Datafile for realistic temperature treatments before experiment was finished
+    - July1toAug31.csv: Raw datafile from the weather station at RDU Airport on temperatures from July 1, 2020 to August 31, 2020
+    - rduairport.csv: Raw datafile from RDU airport with temperature data for 2020
+    - Round1_DatesFixed.csv: Datafile that was modified from CleanedRound1.csv which fixed the death dates of larval-pupal intermediates to accurately reflect the day they died. This is the datafile used in analysis.
+    - Round1_July5.csv: Datafile with incorrect death dates used during analysis
+    - Round1_July6.csv: Datafile with incorrect death dates used during analysis
+    - simulated_36_-79_2_d_2022_4_1_5_31_inbetween.csv: Datafile used by our environmental chambers to replicate realistic temperature conditions for April 1-May 31 of 2020
+    - simulated_36_-79_2_d_2022_8_1_8_31_inbetween.csv: Datafile used by our environmental chambers to replicate realistic temperature conditions for August 1-August 31 of 2020
+    
   1b. **Figures** folder: contains all outputted ggplot figures created by scripts
   1c. PossibleThermalConditions.Rmd: shows different thermal scenarios to choose     between for the second round temperature regimes 
   1d. RealWeatherConditions.Rmd: creates the file necessary for running the program   on the chamber for the April 2020 and August 2020 weather patterns
