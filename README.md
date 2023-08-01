@@ -3,14 +3,21 @@
 This repo contains several datafiles, figure outputs, and analysis scripts for the 2022 INTBio Pieris project. 
 
 ## North Carolina folder
-1. **Data** folder: contains all raw and processed datafiles called in scripts
-2. **Figures** folder: contains all outputted ggplot figures created by scripts
-3. Curve_Fitting.Rmd: codes the curve fitting and parameter estimation using the rTPC package
-4. ProgramCreation.Rmd: codes the output files necessary to run the April and August 2020 temperature regimes on the environmental chambers
-5. Round1_Analysis.Rmd: codes summary statistics, development rate curves, and Kaplan-Meier curves for the first round data
-6. Round1_Cleaning.Rmd: cleans the Round 1 data for use in Round1_Analysis.Rmd
-7. Round2_Analysis.Rmd: codes the summary statistics and observed development times for the second round data 
-8. ThermalConditions.Rmd: shows different thermal scenarios to choose between for the second round temperature regimes. 
+1. **NC Larval and Realistic Temps** Folder: contains all the data and analysis from summer 2022 with Pieris larvae reared at 16,21,26,30, and 34 degrees, the modeling that followed, and testing this model with April and August temperatures
+  1a. **Data** folder: contains all raw and processed datafiles called in scripts
+  1b. **Figures** folder: contains all outputted ggplot figures created by scripts
+  1c. PossibleThermalConditions.Rmd: shows different thermal scenarios to choose     between for the second round temperature regimes 
+  1d. RealWeatherConditions.Rmd: creates the file necessary for running the program   on the chamber for the April 2020 and August 2020 weather patterns
+  1e.  Round1_Analysis.Rmd: codes summary statistics, development rate curves, and   Kaplan-Meier curves for the first round data
+  1f. Round1_Cleaning.Rmd: cleans the Round 1 data for use in Round1_Analysis.Rmd
+  1g. Round2_Analysis.Rmd: codes the summary statistics and observed development     times for the second round data (under april and august temperatures)
+  1h. Curve_Fitting.Rmd: codes the curve fitting and parameter estimation using the   rTPC package
+2. **NC Pupal** Folder: contains all data and analysis from Summer 2023 where Pieris larvae were reared at 26+/-5 then switched to temperature treatments upon pupation 
+  2a. **Data** folder: contains all raw and processed datafiles called in scripts
+  2b.**Figures** folder: contains all outputted ggplot figures created by scripts
+3. **NC Egg** Folder: contains all data and analysis from Summer 2023 where Pieris eggs were placed on a metal temperature gradient plate within 24 hours of being laid
+  3a. **Data** folder: contains all raw and processed datafiles called in scripts
+  3b.**Figures** folder: contains all outputted ggplot figures created by scripts
 
 
 ## Washington folder
