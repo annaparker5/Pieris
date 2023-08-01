@@ -1,0 +1,589 @@
+---
+title: "Round1_Analysis"
+output: html_notebook
+---
+
+0. Load in packages and data sets
+1. Compare mass and dev time of larval pupal intermediates with pupae across temps
+2. Compare mass and dev time of deformed adults with adults across temps
+3. Make data frame with means and standard errors across temps
+4. Make graphs 
+5. Kaplan Meier 
+6. Miscellaneous Models
+
+# 0. Load in packages and data sets
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(lmerTest)
+library(Rmisc)
+library(survival)
+library(survminer)
+```
+
+```{r}
+data <- read.csv("~/Desktop/Github/Pieris/North Carolina/data/CleanedRound1.csv", header = TRUE)
+
+data$Mean.Temp <- as.factor(data$Mean.Temp)
+```
+
+# 1. Compare larval pupal ints with successful pupae
+
+## Mass at pupation
+
+```{r}
+masspupae <- lm(Mass.pupa ~ PupateOk*Mean.Temp, data = data[data$Surv.pupa == "Y", ])
+
+anova(masspupae)
+
+summary(masspupae)
+```
+Drop the non-significant interaction term
+
+
+```{r}
+masspupaeadd <- lm(Mass.pupa ~ PupateOk + Mean.Temp, data = data[data$Surv.pupa == "Y", ])
+
+anova(masspupaeadd)
+
+summary(masspupaeadd)
+```
+
+
+## Time at pupation
+
+
+```{r}
+timepupae <- lm(Time.pupa ~ PupateOk*Mean.Temp, data = data[data$Surv.pupa == "Y", ])
+
+anova(timepupae)
+
+summary(timepupae)
+```
+
+Drop insignificant interaction term
+
+```{r}
+timepupaeadd <- lm(Time.pupa ~ PupateOk + Mean.Temp, data = data[data$Surv.pupa == "Y", ])
+
+anova(timepupaeadd)
+
+summary(timepupaeadd)
+```
+
+# 2. Compare adults 
+
+Mass at eclosion
+
+```{r}
+massadults <- lm(Mass.adult ~ EcloseOk*Mean.Temp, data = data[data$Surv.eclose == "Y", ])
+
+anova(massadults)
+
+summary(massadults)
+```
+Remove insignificant interaction term
+
+```{r}
+massadultsadd <- lm(Mass.adult ~ EcloseOk+Mean.Temp, data = data[data$Surv.eclose == "Y", ])
+
+anova(massadultsadd)
+
+summary(massadultsadd)
+```
+
+```{r}
+timeadults <- lm(Time.eclose ~ EcloseOk * Mean.Temp, data = data[data$Surv.eclose == "Y", ])
+
+anova(timeadults)
+
+summary(timeadults)
+```
+
+drop insignificant interaction term
+
+```{r}
+timeadultsadd <- lm(Time.eclose ~ EcloseOk + Mean.Temp, data = data[data$Surv.eclose == "Y", ])
+
+anova(timeadultsadd)
+
+summary(timeadultsadd)
+```
+
+# 3. Get means for different groups
+
+## Pupal mass
+
+Separating out LPI and successful pupae 
+
+### Mean mass and SE
+
+```{r}
+pupalmeans <- summarySE(data = data[data$Surv.pupa == "Y", ], measurevar = "Mass.pupa", groupvars = c("Mean.Temp", "PupateOk"))
+
+pupalmeans
+
+pupalmeans$Mass.se <- pupalmeans$se
+
+pupalmeans <- pupalmeans %>%
+  select(Mean.Temp, PupateOk, N, Mass.pupa, Mass.se)
+
+
+```
+
+### Mean dev time and SE
+
+```{r}
+pupaltimemeans <- summarySE(data = data[data$Surv.pupa == "Y", ], measurevar = "Time.pupa", groupvars = c("Mean.Temp", "PupateOk"))
+
+pupaltimemeans
+
+pupaltimemeans$Time.se <- pupaltimemeans$se
+
+pupaltimemeans <- pupaltimemeans %>%
+  select(Mean.Temp, PupateOk, N, Time.pupa, Time.se)
+```
+
+### Merge together
+
+```{r}
+pupalmeans <- merge(pupalmeans, pupaltimemeans, by = c("Mean.Temp", "PupateOk", "N"))
+```
+
+
+## Add in dvelopment rate
+
+```{r}
+data$Dev.Rate <- 1 / (data$Time.pupa)
+```
+
+```{r}
+pupalratemeans <- summarySE(data = data[data$Surv.pupa == "Y", ], measurevar = "Dev.Rate", groupvars = c("Mean.Temp", "PupateOk"))
+
+pupalratemeans
+
+pupalratemeans$Rate.se <- pupalratemeans$se
+
+pupalratemeans <- pupalratemeans %>%
+  select(Mean.Temp, PupateOk, N, Dev.Rate, Rate.se)
+```
+
+
+```{r}
+pupalmeans <- merge(pupalmeans, pupalratemeans, by = c("Mean.Temp", "PupateOk", "N"))
+```
+
+
+# 4. Graphing everything
+
+## Endpoints of pupal mass and dev time
+
+
+```{r}
+pupalgraph <- ggplot(data = pupalmeans, aes(x = Time.pupa, y = Mass.pupa, color = Mean.Temp, shape = PupateOk)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_errorbar(aes(ymin = Mass.pupa - Mass.se, ymax = Mass.pupa + Mass.se)) + 
+  geom_errorbarh(aes(xmin = Time.pupa - Time.se, xmax = Time.pupa + Time.se)) + 
+  guides(scale = "none") + 
+  scale_color_manual(values = c("purple", "#1E88E5", "lime green", "orange", "#D81B60")) + 
+  scale_shape_manual(values = c(21, 19)) + 
+  labs(x = "Time until pupation (days)", y = "Mass at pupation (mg)", color = "Mean temperature treatment", shape = "Successful Pupation")
+
+
+pupalgraph
+```
+
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Figures/pupalgraph.png", pupalgraph, width = 8, height = 5)
+```
+
+
+
+
+## Final graph: Dev **RATE** vs. temp treatment
+
+```{r}
+devrategraph <- ggplot(data = pupalmeans, aes(x = Mean.Temp, y = Dev.Rate, group = PupateOk, shape = PupateOk)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_errorbar(aes(ymin = Dev.Rate - Rate.se, ymax = Dev.Rate + Rate.se), width = 0.3) + 
+  scale_shape_manual(values = c(21, 19)) + 
+  geom_line(aes(linetype = PupateOk)) + 
+  scale_linetype_manual(values = c("dotdash", "solid")) + 
+  labs(x = "Mean Rearing Temperature", y = "Development Rate", shape = "Successful Pupation", linetype = "Successful Pupation")
+
+devrategraph
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Figures/devrategraph.png", devrategraph, width = 8, height = 5)
+```
+
+
+## Pupal mass vs temp treatment
+
+```{r}
+pupmasstempgraph <- ggplot(data = pupalmeans, aes(x = Mean.Temp, y = Mass.pupa, group = PupateOk, shape = PupateOk)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_errorbar(aes(ymin = Mass.pupa - Mass.se, ymax = Mass.pupa + Mass.se), width = 0.3) + 
+  #geom_point(data= data[data$Surv.pupa=="Y", ], aes(x=Mean.Temp, y=Mass.pupa, shape=PupateOk), alpha = .4)+ 
+  scale_shape_manual(values = c(21, 19)) + 
+  geom_line(aes(linetype = PupateOk)) + 
+  scale_linetype_manual(values = c("dotdash", "solid")) + 
+  labs(x = "Mean Rearing Temperature", y = "Pupal Mass", shape = "Successful Pupation", linetype = "Successful Pupation")
+
+pupmasstempgraph
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Figures/pupmasstempgraph.png", pupmasstempgraph, width = 8, height = 5)
+```
+
+## Survival to pupation vs temp treatment 
+
+1. Create summary table
+2. Create blank table for input
+3. Hard code input
+4. Graph it
+
+### 1. Create summary table
+
+```{r}
+survpercsum <- summarySE(data = data, 
+                         measurevar = "Mass.pupa", 
+                         groupvars = c("Mean.Temp", "Surv.pupa"))
+```
+
+### 2. Create blank table
+
+```{r}
+survdata <- data.frame(Mean.Temp = c(16, 21, 26, 30, 34), 
+                       surv.perc = 0, 
+                       group = 1)
+
+survdata$Mean.Temp <- as.factor(survdata$Mean.Temp)
+survdata$group = as.factor(survdata$group)
+```
+
+### 3. Hard code it
+
+```{r}
+survdata[1, 2] <- survpercsum[2, 3] / (survpercsum[2, 3] + survpercsum[1, 3])
+survdata[2, 2] <- survpercsum[4, 3] / (survpercsum[4, 3] + survpercsum[3, 3])
+survdata[3, 2] <- survpercsum[6, 3] / (survpercsum[6, 3] + survpercsum[5, 3])
+survdata[4, 2] <- survpercsum[8, 3] / (survpercsum[8, 3] + survpercsum[7, 3])
+survdata[5, 2] <- survpercsum[10, 3] / (survpercsum[10, 3] + survpercsum[9, 3])
+```
+
+### 4. Graph it
+
+```{r}
+survgraph <- ggplot(data = survdata, aes(x = Mean.Temp, y = surv.perc, group = group)) + 
+  theme_bw() + 
+  geom_point(size = 2) + 
+  geom_line() + 
+  ylim(0, 1) + 
+  labs(x = "Mean Rearing Temperature", y = "Proportion survival to pupation")
+
+survgraph
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Figures/survgraph.png", survgraph, width = 8, height = 5)
+```
+
+## Mass across development plot
+
+0. Select only the columns we need from `r data`
+1. Add in a start point
+2. Use the `r gather` function to make a "long" dataset
+3. Use SummarySE to get our means from that long dataset
+4. Actually graph it
+
+### 0. Select needed columns
+
+```{r}
+condensed <- data %>%
+  select(CID, Mean.Temp, Time.4th, Mass.4th, Time.5th, Mass.5th, Time.pupa, Mass.pupa)
+```
+
+### 1. Add a start point
+
+```{r}
+condensed$Time.hatch <- 0
+condensed$Mass.hatch <- 0.01
+```
+
+### 2. Use the gather function
+
+```{r}
+condensedmass <- condensed %>%
+  select(CID, Mean.Temp, Mass.hatch, Mass.4th, Mass.5th, Mass.pupa)
+
+masslong <- condensedmass %>%
+  gather(instar, mass, Mass.hatch, Mass.4th, Mass.5th, Mass.pupa)
+
+masslong$instar <- gsub("Mass.", "", masslong$instar)
+
+```
+
+```{r}
+condensedtime <- condensed %>%
+  select(CID, Mean.Temp, Time.hatch, Time.4th, Time.5th, Time.pupa)
+
+timelong <- condensedtime %>%
+  gather(instar, time, Time.hatch, Time.4th, Time.5th, Time.pupa)
+
+timelong$instar <- gsub("Time.", "", timelong$instar)
+```
+
+```{r}
+datalong <- merge(masslong, timelong, by = c("CID", "Mean.Temp", "instar"))
+```
+
+Make sure our instars are in the right order
+
+```{r}
+datalong$instar <- as.factor(datalong$instar) 
+
+datalong$instar <- factor(x = datalong$instar, levels = c("hatch", "4th", "5th", "pupa"))
+```
+
+### 3. Get means and standard errors
+
+```{r}
+longmasssum <- summarySE(data =datalong, 
+                         measurevar = "mass", 
+                         groupvars = c("Mean.Temp", "instar"), 
+                         na.rm = TRUE)
+
+longtimesum <- summarySE(data =datalong, 
+                         measurevar = "time", 
+                         groupvars = c("Mean.Temp", "instar"), 
+                         na.rm = TRUE)
+
+longmasssum$mass.se <- longmasssum$se
+longtimesum$time.se <- longtimesum$se
+
+longmasssum <- longmasssum %>%
+  select(Mean.Temp, instar, mass, mass.se)
+
+longtimesum <- longtimesum %>%
+  select(Mean.Temp, instar, time, time.se)
+
+
+longsum <- merge(longmasssum, longtimesum, by = c("Mean.Temp", "instar"))
+```
+
+### 4. Finally we graph it
+
+
+```{r}
+masstimegraph <- ggplot(data = longsum, aes(x = time, y = mass, group = Mean.Temp, color = Mean.Temp)) + 
+  theme_bw() + 
+  geom_point(size = 2) + 
+  geom_line() + 
+  geom_errorbar(aes(ymin = mass - mass.se, ymax = mass + mass.se)) + 
+  geom_errorbarh(aes(xmin = time - time.se, xmax = time + time.se)) + 
+  labs(x = "Development time (days)", y = "Mass (mg)", color = "Temperature Treatment") + 
+  scale_color_manual(values = c("purple", "#1E88E5", "lime green", "orange", "#D81B60"))
+
+masstimegraph
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Figures/masstimegraph.png", masstimegraph, width = 8, height = 5)
+```
+
+
+# 5. Kaplan Meier OLD
+
+1. Create survtime column by concat. time.eclose and time.death cols
+2. Create total "did it die?" column
+3. Create surv object 
+4. Run model fit of the surv object
+5. Plot in base r?
+6. Plot using survminer
+7. Coxph modeling
+
+## 1. Create survtime column by concat. time.eclose and time.death cols
+```{r}
+data <- data %>%
+  mutate(Time.surv = coalesce(Time.eclose, Time.death))
+```
+
+**Fix missing data value later**
+
+## 2. Create "did it die?" column
+
+```{r}
+data$died <- 0
+
+for(i in 1:length(data$CID)){
+  if(is.na(data[i, 27]) == TRUE){
+    data[i, 31] <- 0
+  } else if(is.na(data[1, 27]) == FALSE){
+    data[i, 31] <- 1
+  }
+}
+```
+
+## 3. Create Surv object
+
+```{r}
+survobject <- Surv(data$Time.surv, data$died)
+
+View(survobject)
+```
+
+## 4. Run model fit
+
+```{r}
+survmodel <- survfit(survobject ~ Mean.Temp, data = data) 
+```
+
+## 5. Plot in base r, just to check
+
+```{r}
+plot(survmodel)
+```
+
+## 6. Plot using survminer
+
+```{r}
+survplot <- ggsurvplot(fit = survmodel, 
+           data = data, 
+           xlab = "Days in experiment", 
+           ylab = "Survival probability",  
+           palette = c("purple", "#1E88E5", "lime green", "orange", "#D81B60")) 
+
+survplotlegend <- survplot$plot + theme(legend.position = "right")
+
+survplotlegend
+
+ggsave("~/Desktop/GitHub/Pieris/Figures/KMsurvplot.png", survplotlegend, width = 8, height = 5)
+```
+
+## 7. Cox proportional hazard modeling
+
+```{r}
+coxmodel <- coxph(survobject ~ Mean.Temp, data = data)
+
+summary(coxmodel)
+anova(coxmodel)
+```
+
+Treatment does affect survival curves/probability. 
+
+# 6. Kaplan-Meier NEW
+
+**NOTE 7/18: Rerunning with pupation (or L-P int) as "exit"**
+
+
+1. Create survtime column by concat. time.pupa and time.death cols using a for loop 
+2. Create total "did it pupate?" column
+3. Create surv object 
+4. Run model fit of the surv object
+5. Plot in base r?
+6. Plot using survminer
+7. Coxph modeling
+
+## 1. Create survtime column using a for loop 
+```{r}
+data$Time.surv.pupa <- 0
+
+for(i in 1:length(data$CID)){
+  if(is.na(data[i, 17]) == FALSE){
+    data[i, 30] <- data[i, 17]
+  } else if(is.na(data[i, 17]) == TRUE){
+    data[i, 30] <- data[i, 27]
+  }
+}
+```
+
+**Fix missing data value later**
+
+## 2. Create "did it die?" column
+
+```{r}
+data$died.prepupa <- 0
+
+for(i in 1:length(data$CID)){
+  if(is.na(data[i, 17]) == TRUE){
+    data[i, 31] <- 1
+  } else if(is.na(data[1, 17]) == FALSE){
+    data[i, 31] <- 0
+  }
+}
+```
+
+## 3. Create Surv object
+
+```{r}
+survobject <- Surv(data$Time.surv.pupa, data$died.prepupa)
+
+View(survobject)
+```
+
+## 4. Run model fit
+
+```{r}
+survmodel <- survfit(survobject ~ Mean.Temp, data = data) 
+```
+
+## 5. Plot in base r, just to check
+
+```{r}
+plot(survmodel)
+```
+
+
+## 6. Plot using survminer
+
+```{r}
+survplotpupa <- ggsurvplot(fit = survmodel, 
+           data = data, 
+           xlab = "Days in experiment", 
+           ylab = "Survival probability",  
+           palette = c("purple", "#1E88E5", "lime green", "orange", "#D81B60")) 
+
+survplotlegendpupa <- survplotpupa$plot + theme(legend.position = "right")
+
+survplotlegendpupa
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Figures/KMsurvplotpupa.png", survplotlegendpupa, width = 8, height = 5)
+```
+
+## 7. Cox proportional hazard modeling
+
+```{r}
+coxmodel <- coxph(survobject ~ Mean.Temp, data = data)
+
+summary(coxmodel)
+anova(coxmodel)
+```
+
+# 6. Miscellaneous models
+
+Does time to death vary with temperature?
+
+```{r}
+data$Stage.final <- as.factor(data$Stage.final)
+
+moddeath <- lm(Time.death ~ Mean.Temp, data = data)
+
+anova(moddeath)
+
+summary(moddeath)
+```
+
+Doesn't work because development times are different across treatments. Can't run with two categorical variables (Stage.final and Mean.Temp) - need to figure out a different analysis. 
+
+
+

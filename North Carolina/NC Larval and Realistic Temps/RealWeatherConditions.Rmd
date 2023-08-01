@@ -1,0 +1,227 @@
+---
+title: "Program Creation"
+output: html_notebook
+---
+
+This document creates the file necessary for running the program on the chamber for the April 2020 and August 2020 weather patterns. 
+
+
+# 0. Load in packages and data
+
+```{r}
+library(lubridate)
+library(ggplot2)
+```
+
+```{r}
+rdu <- read.csv("~/Desktop/GitHub/Pieris/Data/rduairport.csv", header = TRUE)
+```
+
+# 1. Clean the data
+
+```{r}
+rdu$time <- 1:3068
+
+rdu$TmaxC <- (rdu$TMAX - 32) * (5/9)
+rdu$TminC <- (rdu$TMIN - 32) * (5/9)
+
+rdu$DATE <- as.Date(rdu$DATE, format = "%m/%d/%Y")
+```
+
+Make two separate datafiles
+
+```{r}
+rduapril <- rdu[rdu$DATE >= "2020-04-01", ]
+rduapril <- rduapril[rduapril$DATE <= "2020-06-01", ]
+
+rduapril$day <- 1:62
+```
+
+```{r}
+rduaugust <- rdu[rdu$DATE >= "2020-08-01", ]
+rduaugust <- rduaugust[rduaugust$DATE <= "2020-09-01", ]
+
+rduaugust$day <- 1:32
+
+
+```
+
+## Change 0degC day to 2degC 
+
+```{r}
+rduapril[11, 14] <- 2
+```
+
+
+
+# 2. Make the for loop 
+
+**Starting the for loop at 2 am** 
+
+## APRIL
+
+### 0. Make the empty dataset 
+
+```{r}
+minute <- 1:(60*24)
+
+aprilday <- 1:61
+
+sequence <- 1:(61*1440)
+april <- as.data.frame(sequence)
+april$day <- rep(1:61, each = 1440)
+april$minute <- minute
+april$temp <- 0
+
+finalapr <- data.frame(sequence = integer(),
+                    day = integer(), 
+                    minute = integer(), 
+                    temp = numeric())
+
+```
+
+
+### 1. Figure out minute demarcations
+
+```{r}
+#2:01 am-4am: 1 to 120
+120 + (10*60) #121 to 720: 4:01 am - 2 pm
+720 + 120 # 721 to 840: 2:01 pm - 4 pm
+840 + (10*60) # 841 to 1440 - 4:01 pm to 2 am
+
+```
+
+### 2. Make the for loop
+
+```{r}
+for (i in 1:length(unique(april$day))) {
+  subset <-  april[april$day == i, ]
+  for (j in 1:length(unique(subset$minute))) {
+    if (j >= 1 & j <= 120){
+      subset[j, 4] <- rduapril[rduapril$day == i, 14]
+    } else if (j >= 121 & j <= 720){
+      positionup <- seq((rduapril[rduapril$day == i, 14]), (rduapril[rduapril$day == i, 13]), length = 600)
+      positionup <- as.data.frame(positionup)
+      positionup$up <- 121:720
+      subset[j, 4] <- positionup[positionup$up == j, 1] 
+      } else if (j >= 721 & j <= 840) {
+          subset[j, 4] <- rduapril[rduapril$day == i, 13]
+        } else if (j >= 841 & j <= 1440) {
+          positiondown <- seq((rduapril[rduapril$day == i, 13]), (rduapril[rduapril$day == (i+1), 14]), length = 600)
+          positiondown <- as.data.frame(positiondown)
+          positiondown$down <- 841:1440
+          subset[j, 4] <- positiondown[positiondown$down == j, 1] 
+        }
+    
+  }
+ finalapr <- rbind(finalapr, subset)
+}
+```
+
+## AUGUST
+
+```{r}
+augustday <- 1:31
+
+sequence2 <- 1:(31*1440)
+august <- as.data.frame(sequence2)
+august$day <- rep(1:31, each = 1440)
+august$minute <- minute
+august$temp <- 0
+
+finalaug <- data.frame(sequence = integer(),
+                    day = integer(), 
+                    minute = integer(), 
+                    temp = numeric())
+
+```
+
+
+```{r}
+for (i in 1:length(unique(august$day))) {
+  subset <-  august[august$day == i, ]
+  for (j in 1:length(unique(subset$minute))) {
+    if (j >= 1 & j <= 120){
+      subset[j, 4] <- rduaugust[rduaugust$day == i, 14]
+    } else if (j >= 121 & j <= 720){
+      positionup <- seq((rduaugust[rduaugust$day == i, 14]), (rduaugust[rduaugust$day == i, 13]), length = 600)
+      positionup <- as.data.frame(positionup)
+      positionup$up <- 121:720
+      subset[j, 4] <- positionup[positionup$up == j, 1] 
+      } else if (j >= 721 & j <= 840) {
+          subset[j, 4] <- rduaugust[rduaugust$day == i, 13]
+        } else if (j >= 841 & j <= 1440) {
+          positiondown <- seq((rduaugust[rduaugust$day == i, 13]), (rduaugust[rduaugust$day == (i+1), 14]), length = 600)
+          positiondown <- as.data.frame(positiondown)
+          positiondown$down <- 841:1440
+          subset[j, 4] <- positiondown[positiondown$down == j, 1] 
+        }
+    
+  }
+ finalaug <- rbind(finalaug, subset)
+}
+```
+
+
+
+# 3. Graph to check!
+
+```{r}
+aprilplot <- ggplot(data = finalapr, aes(x = sequence, y = temp)) + 
+  theme_bw() + 
+  geom_line() + 
+  labs(x = "Time (min)", y = "Temperature (C)")
+
+aprilplot
+
+ggsave("~/Desktop/GitHub/Pieris/Figures/aprilplot.png", aprilplot, width = 8, height = 5)
+```
+
+
+```{r}
+augustplot <- ggplot(data = finalaug, aes(x = sequence2, y = temp)) + 
+  theme_bw() + 
+  geom_line() + 
+  labs(x = "Time (min)", y = "Temperature (C)")
+
+augustplot
+
+ggsave("~/Desktop/GitHub/Pieris/Figures/augustplot.png", augustplot, width = 8, height = 5)
+```
+
+
+# 4. Insert into official data files
+
+## 0. Load in the datafiles
+
+```{r}
+aprilofficial <- read.csv("~/Desktop/GitHub/Pieris/Data/Apr1toMay31.csv", header = FALSE)
+augustofficial <- read.csv("~/Desktop/GitHub/Pieris/Data/Aug1toAug31.csv", header = FALSE)
+```
+
+Cut off first two hours of official and last two hours of final 
+
+```{r}
+aprilofficial <- aprilofficial[121:87840, ]
+augustofficial <- augustofficial[121:44640, ]
+```
+
+```{r}
+finalapr <- finalapr[1:87720, ]
+finalaug <- finalaug[1:44520, ]
+```
+
+
+```{r}
+aprilofficial$V1 <- finalapr$temp
+augustofficial$V1 <- finalaug$temp
+```
+
+
+```{r}
+write.csv(aprilofficial, file = "~/Desktop/GitHub/Pieris/Data/simulated_36_-79_2_d_2022_4_1_5_31_inbetween.csv", 
+          row.names =  FALSE)
+write.csv(augustofficial,file = "~/Desktop/GitHub/Pieris/Data/simulated_36_-79_2_d_2022_8_1_8_31_inbetween.csv",  
+          row.names = FALSE)
+```
+

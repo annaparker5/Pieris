@@ -1,0 +1,72 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is a script to finish cleaning the round 1 experimental data and create a new output csv file. 
+
+0. Load in data and packages
+1. Add in survival binaries (Surv.4th, 5th, etc.)
+2. Save the output file
+
+# 0. Load in data and packages
+```{r}
+library(dplyr)
+```
+
+```{r}
+round1 <- read.csv("~/Desktop/GitHub/Pieris/Data/Round1_DatesFixed.csv", header = TRUE)
+```
+
+# 1. Making for loop 
+
+## Surv.4th
+```{r}
+for (i in 1:length(round1$Surv.4th)){
+  if(is.na(round1[i,10])== TRUE){
+    round1[i,7] <- "N"
+  } else if(is.na(round1[i,10])== FALSE){
+    round1[i,7] <- "Y"
+  }
+}
+```
+
+## Surv.5th
+```{r}
+for (i in 1:length(round1$Surv.5th)){
+  if(is.na(round1[i,14])== TRUE){
+    round1[i,11] <- "N"
+  } else if(is.na(round1[i,14])== FALSE){
+    round1[i,11] <- "Y"
+  }
+}
+```
+
+## Surv.pupa
+```{r}
+for (i in 1:length(round1$Surv.pupa)){
+  if(is.na(round1[i,18])== TRUE){
+    round1[i,15] <- "N"
+  } else if(is.na(round1[i,18])== FALSE){
+    round1[i,15] <- "Y"
+  }
+}
+```
+
+## Surv.eclose
+```{r}
+for (i in 1:length(round1$Surv.eclose)){
+  if(is.na(round1[i,22])== TRUE){
+    round1[i,20] <- "N"
+  } else if(is.na(round1[i,22])== FALSE){
+    round1[i,20] <- "Y"
+  }
+}
+```
+
+# 2. 
+
+```{r}
+write.csv(round1, file = "~/Desktop/Github/Pieris/Data/CleanedRound1.csv", row.names = FALSE)
+```
+

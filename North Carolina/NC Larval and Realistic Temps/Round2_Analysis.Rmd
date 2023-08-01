@@ -1,0 +1,137 @@
+---
+title: "Round 2 Analysis "
+output: html_notebook
+---
+
+Let's compare our predictions to the round 2 data. 
+
+Reminder: 
+
+Predicted Dev time for April: 32.8 days
+Preicted Dev time for August: 12.5 days
+
+
+# 0. Load in the data and packages
+
+```{r}
+library(Rmisc)
+library(ggplot2)
+library(tidyverse)
+```
+
+```{r}
+round2 <- read.csv("~/Desktop/GitHub/Pieris/Data/CleanedRound2.csv", header = TRUE)
+
+round2 <- round2[round2$CID != 77, ]
+round2 <- round2[round2$CID != 46, ]
+```
+
+# 1. Clean the data
+
+
+```{r}
+for (i in 1:length(round2$Surv.pupa)){
+  if(is.na(round2[i,17])== TRUE){
+    round2[i,14] <- "N"
+  } else if(is.na(round2[i,17])== FALSE){
+    round2[i,14] <- "Y"
+  }
+}
+
+```
+
+# 2. Get means
+
+## Pupal mass
+
+Separating out LPI and successful pupae 
+
+### Mean mass and SE
+
+```{r}
+pupalmeans2 <- summarySE(data = round2[round2$Surv.pupa == "Y", ], measurevar = "Mass.pupa", groupvars = c("Treatment", "PupateOK"))
+
+pupalmeans2
+
+pupalmeans2$Mass.se <- pupalmeans2$se
+
+pupalmeans2 <- pupalmeans2 %>%
+  select(Treatment, PupateOK, N, Mass.pupa, Mass.se)
+
+
+```
+
+### Mean dev time and SE
+
+```{r}
+pupaltimemeans2 <- summarySE(data = round2[round2$Surv.pupa == "Y", ], measurevar = "Time.pupa", groupvars = c("Treatment", "PupateOK"))
+
+pupaltimemeans2
+
+pupaltimemeans2$Time.se <- pupaltimemeans2$se
+
+pupaltimemeans2 <- pupaltimemeans2 %>%
+  select(Treatment, PupateOK, N, Time.pupa, Time.se)
+```
+
+### Merge together
+
+```{r}
+pupalmeans2 <- merge(pupalmeans2, pupaltimemeans2, by = c("Treatment", "PupateOK", "N"))
+```
+
+
+## Add in dvelopment rate
+
+```{r}
+round2$Dev.Rate <- 1 / (round2$Time.pupa)
+```
+
+```{r}
+pupalratemeans2 <- summarySE(data = round2[round2$Surv.pupa == "Y", ], measurevar = "Dev.Rate", groupvars = c("Treatment", "PupateOK"))
+
+pupalratemeans2
+
+pupalratemeans2$Rate.se <- pupalratemeans2$se
+
+pupalratemeans2 <- pupalratemeans2 %>%
+  select(Treatment, PupateOK, N, Dev.Rate, Rate.se)
+```
+
+
+```{r}
+pupalmeans2 <- merge(pupalmeans2, pupalratemeans2, by = c("Treatment", "PupateOK", "N"))
+```
+
+
+# Get new values with both successful and unsuccessful pupations
+
+Apr prediction: 33.42
+Aug prediction: 12.92
+
+
+```{r}
+pupaltimemeans2total <- summarySE(data = round2[round2$Surv.pupa == "Y", ], measurevar = "Time.pupa", groupvars = c("Treatment"))
+
+pupaltimemeans2total
+
+pupaltimemeans2total$Time.se <- pupaltimemeans2total$se
+
+pupaltimemeans2total <- pupaltimemeans2total %>%
+  select(Treatment, N, Time.pupa, Time.se)
+```
+
+
+```{r}
+pupalratemeans2total <- summarySE(data = round2[round2$Surv.pupa == "Y", ], measurevar = "Dev.Rate", groupvars = c("Treatment"))
+
+pupalratemeans2total
+
+pupalratemeans2total$Rate.se <- pupalratemeans2total$se
+
+pupalratemeans2total <- pupalratemeans2total %>%
+  select(Treatment, N, Dev.Rate, Rate.se)
+```
+
+
+
