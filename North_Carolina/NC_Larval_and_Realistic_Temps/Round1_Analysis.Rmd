@@ -23,7 +23,7 @@ library(survminer)
 ```
 
 ```{r}
-data <- read.csv("~/Desktop/Github/Pieris/North Carolina/data/CleanedRound1.csv", header = TRUE)
+data <- read.csv("~/Desktop/Github/Pieris/North_Carolina/NC_Larval_and_Realistic_Temps/Data/CleanedRound1.csv", header = TRUE)
 
 data$Mean.Temp <- as.factor(data$Mean.Temp)
 ```
