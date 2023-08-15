@@ -8,8 +8,8 @@ This is script to clean California larval experiment from Summer 2023, and begin
 
 0. Load in data
 1. Fill unfilled columns for survival at each stage
-2. Get means for all that survived to eclosion
-3. Get means for all that survived to pupation (but not necessarily eclosion)
+2. Anova analyses to compare differences between intermediates and successful pupa, pupa that survived to eclosion and pupa that died as pupa, etc
+3. Get means for all that survived to eclosion and get means for all that survived to pupation (but not necessarily eclosion)
 4. Graph!
 
 
@@ -17,6 +17,7 @@ This is script to clean California larval experiment from Summer 2023, and begin
 ```{r}
 library(dplyr)
 library(tidyverse)
+library(Rmisc)
 ```
 
 ```{r}
@@ -76,8 +77,8 @@ for (i in 1:length(CaliLarvalData$Surv.eclose)){
   }
 }
 ```
-
-# 2. Work on getting summary data table
+# 2. Anova Analyses 
+# 3. Work on getting summary data table
 
 ## Add in rates for pupation and eclosion
 
@@ -206,9 +207,69 @@ DataSummary <-merge(adata, pdata, by = c("Mean.temp", "N"))
 DataSummary$Mean.temp <- as.factor(DataSummary$Mean.temp)
 DataSummary
 ```
+## For individuals that just survived to pupation
+
+```{r}
+pupationcleaned <- CaliLarvalData[CaliLarvalData$Surv.pupa == "Y", ]
+pupationcleaned <- pupationcleaned[pupationcleaned$CID != 251, ]
+pupationcleaned <- pupationcleaned[pupationcleaned$CID != 309, ]
+pupationcleaned <- pupationcleaned[pupationcleaned$CID != 387, ]
+pupationcleaned <- pupationcleaned[pupationcleaned$CID != 380, ]
+pupationcleaned <- pupationcleaned[pupationcleaned$CID != 376, ]
+```
+
+
+### Mass of pupa
+```{r}
+pupalmass <- summarySE(data = pupationcleaned, measurevar = "Mass.pupa", groupvars = c("Mean.temp", "Pupate.ok"))
+
+pupalmass$Mass.se <- pupalmass$se
+
+pupalmass <- pupalmass %>%
+  select(Mean.temp, N, Mass.pupa, Mass.se, Pupate.ok)
+
+pupalmass
+
+```
+
+### Mean time to pupation and SE
+```{r}
+pupaltime <- summarySE(data = pupationcleaned, measurevar = "Time.pupa", groupvars = c("Mean.temp", "Pupate.ok"))
+
+pupaltime$Time.se <- pupaltime$se
+
+pupaltime <- pupaltime %>%
+  select(Mean.temp, N, Time.pupa, Time.se, Pupate.ok)
+
+pupaltime
+
+```
+
+### Pupal dev rates 
+```{r}
+pupaldevrate <- summarySE(data = pupationcleaned, measurevar = "pupal.devrate", groupvars = c("Mean.temp", "Pupate.ok"))
+
+pupaldevrate$PDevRate.se <- pupaldevrate$se
+
+pupaldevrate <- pupaldevrate %>%
+  select(Mean.temp, N, pupal.devrate, PDevRate.se, Pupate.ok)
+
+pupaldevrate
+
+```
+### Merge together
+
+```{r}
+PupalDataSummary<- merge(pupalmass, pupaltime, by = c("Mean.temp", "N", "Pupate.ok"))
+PupalDataSummary <- merge(PupalDataSummary, pupaldevrate, by = c("Mean.temp", "N", "Pupate.ok"))
+
+
+PupalDataSummary$Mean.temp <- as.factor(PupalDataSummary$Mean.temp)
+PupalDataSummary
+```
 #4. Graphing!!!
 
-## Pupal Mass v. Time to Pupation
+## Pupal Mass v. Time to Pupation (for individuals that survived to eclosion)
 
 ```{r}
 pupalgraph <- ggplot(data = DataSummary, aes(x = Time.pupa, y = Mass.pupa, color = Mean.temp)) + 
@@ -222,14 +283,79 @@ pupalgraph <- ggplot(data = DataSummary, aes(x = Time.pupa, y = Mass.pupa, color
 pupalgraph
 
 ```
+## Pupal Mass v. Time to Pupation (for individuals that survived to pupation)
+```{r}
+pupalgraph <- ggplot(data = PupalDataSummary, aes(x = Time.pupa, y = Mass.pupa, color = Mean.temp, shape = Pupate.ok)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_errorbar(aes(ymin = Mass.pupa - Mass.se, ymax = Mass.pupa + Mass.se)) + 
+  geom_errorbarh(aes(xmin = Time.pupa - Time.se, xmax = Time.pupa + Time.se)) + 
+  guides(scale = "none") + 
+  scale_shape_manual(values = c(21, 19)) + 
+  scale_color_manual(values = c("purple", "#1E88E5", "lime green", "orange", "#D81B60")) + 
+  labs(x = "Time until pupation (days)", y = "Mass at pupation (mg)", color = "Mean temperature treatment", shape = "Successful Pupation")
+pupalgraph
 
+```
+## Development Rate (to eclosion) versus temperature (for individuals that survived to eclosion)
 ```{r}
 devrategraph <- ggplot(data = DataSummary, aes(x = Mean.temp, y = eclose.devrate)) + 
   theme_bw() + 
   geom_point(size = 3) + 
   geom_errorbar(aes(ymin = eclose.devrate - ADevRate.se, ymax = eclose.devrate + ADevRate.se), width = 0.3) + 
-  geom_line() + 
+  geom_line(group=1) + 
   labs(x = "Mean Rearing Temperature", y = "Development Rate")
 
 devrategraph
 ```
+## Development Rate (to pupation) versus temperature (for individuals that survived to pupation)
+```{r}
+pupdevrategraph <- ggplot(data = PupalDataSummary, aes(x = Mean.temp, y = pupal.devrate, group = Pupate.ok, shape = Pupate.ok)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_errorbar(aes(ymin = pupal.devrate - PDevRate.se, ymax = pupal.devrate + PDevRate.se), width = 0.3) + 
+  geom_line(aes(linetype = Pupate.ok)) + 
+  scale_shape_manual(values = c(21, 19)) + 
+  scale_linetype_manual(values = c("dotdash", "solid"))+
+  labs(x = "Mean Rearing Temperature", y = "Development Rate", shape = "Successful Pupation", linetype = "Successful Pupation")
+
+pupdevrategraph
+
+```
+
+
+## Pupal Mass versus Temperature (for individuals that survived to eclosion)
+```{r}
+pupmasstempgraph <- ggplot(data = DataSummary, aes(x = Mean.temp, y = Mass.pupa)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_errorbar(aes(ymin = Mass.pupa - Mass.se, ymax = Mass.pupa + Mass.se), width = 0.3) + 
+  #geom_point(data= data[data$Surv.pupa=="Y", ], aes(x=Mean.Temp, y=Mass.pupa, shape=PupateOk), alpha = .4)+ 
+  geom_line(group=1) + 
+  labs(x = "Mean Rearing Temperature", y = "Pupal Mass")
+
+pupmasstempgraph
+```
+
+## Pupal Mass versus Temperature (for individuals that survived to pupation)
+```{r}
+pupmasstempgraph2 <- ggplot(data = PupalDataSummary, aes(x = Mean.temp, y = Mass.pupa, shape = Pupate.ok)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  scale_shape_manual(values = c(21, 19)) + 
+  geom_errorbar(aes(ymin = Mass.pupa - Mass.se, ymax = Mass.pupa + Mass.se), width = 0.3) + 
+  geom_line(aes(linetype = Pupate.ok)) + 
+  scale_linetype_manual(values = c("dotdash", "solid"))+
+  labs(x = "Mean Rearing Temperature", y = "Pupal Mass", shape = "Successful Pupation", linetype = "Successful Pupation")
+
+pupmasstempgraph2
+```
+
+
+
+
+
+
+
+
+
