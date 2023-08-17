@@ -1,0 +1,78 @@
+---
+title: "Pieris_Egg_Gradient"
+output: html_document
+date: "2023-08-17"
+---
+ 
+ Outline:
+ 0. Packages and data (north carolina and california)
+ 1. Analyze temperatures- is there significant differences between days or is the temperature of the column consistent?
+ 2. 
+ 
+ 
+ 
+# 0. Packages and data
+```{r}
+TempData <- read.csv("~/Desktop/GitHub/Pieris/Egg_Gradient/Daily_temps_cleaned.csv", header = TRUE)
+```
+ 
+```{r}
+library(lmerTest)
+```
+
+#1. Analyze temperatures 
+
+## Checking warm temperature gradient first
+```{r}
+warmgrad <- lm(Temperature ~ Column*Date, data = TempData[TempData$Gradient_type == "warm", ])
+
+anova(warmgrad)
+
+summary(warmgrad)
+```
+
+## without the interaction term
+
+```{r}
+warmgrad <- lm(Temperature ~ Column+Date, data = TempData[TempData$Gradient_type == "warm", ])
+
+anova(warmgrad)
+
+summary(warmgrad)
+```
+
+Okay so date is not a signicant indicator of temperature in the warm temperature gradient (I think)
+
+## Now checking the cooler temperature gradient
+
+```{r}
+coolgrad <- lm(Temperature ~ Column*Date, data = TempData[TempData$Gradient_type == "cool", ])
+
+anova(coolgrad)
+
+summary(coolgrad)
+```
+
+There might be something going on on June 22nd... 
+
+## Without the interaction term
+
+```{r}
+coolgrad <- lm(Temperature ~ Column+Date, data = TempData[TempData$Gradient_type == "cool", ])
+
+anova(coolgrad)
+
+summary(coolgrad)
+```
+
+Might need to take a closer look at the 20th and 23rd unless I'm mistaken
+
+
+
+
+
+
+
+
+
+
