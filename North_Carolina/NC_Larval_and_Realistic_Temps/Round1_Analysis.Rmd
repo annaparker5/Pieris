@@ -23,7 +23,7 @@ library(survminer)
 ```
 
 ```{r}
-data <- read.csv("~/Desktop/Github/Pieris/Data/CleanedRound1.csv", header = TRUE)
+data <- read.csv("~/Desktop/Github/Pieris/North_Carolina/NC_Larval_and_Realistic_Temps/Data/CleanedRound1.csv", header = TRUE)
 
 data$Mean.Temp <- as.factor(data$Mean.Temp)
 ```
@@ -213,7 +213,7 @@ devrategraph <- ggplot(data = pupalmeans, aes(x = Mean.Temp, y = Dev.Rate, group
   scale_shape_manual(values = c(21, 19)) + 
   geom_line(aes(linetype = PupateOk)) + 
   scale_linetype_manual(values = c("dotdash", "solid")) + 
-  labs(x = "Temperature Treatment", y = "Development Rate", shape = "Successful Pupation", linetype = "Successful Pupation")
+  labs(x = "Mean Rearing Temperature", y = "Development Rate", shape = "Successful Pupation", linetype = "Successful Pupation")
 
 devrategraph
 ```
@@ -234,7 +234,7 @@ pupmasstempgraph <- ggplot(data = pupalmeans, aes(x = Mean.Temp, y = Mass.pupa, 
   scale_shape_manual(values = c(21, 19)) + 
   geom_line(aes(linetype = PupateOk)) + 
   scale_linetype_manual(values = c("dotdash", "solid")) + 
-  labs(x = "Temperature Treatment", y = "Pupal Mass", shape = "Successful Pupation", linetype = "Successful Pupation")
+  labs(x = "Mean Rearing Temperature", y = "Pupal Mass", shape = "Successful Pupation", linetype = "Successful Pupation")
 
 pupmasstempgraph
 ```
@@ -287,7 +287,7 @@ survgraph <- ggplot(data = survdata, aes(x = Mean.Temp, y = surv.perc, group = g
   geom_point(size = 2) + 
   geom_line() + 
   ylim(0, 1) + 
-  labs(x = "Temperature treatment", y = "Proportion survival to pupation")
+  labs(x = "Mean Rearing Temperature", y = "Proportion survival to pupation")
 
 survgraph
 ```

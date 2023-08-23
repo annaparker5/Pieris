@@ -81,7 +81,7 @@ devratepgraph <- ggplot(data = devratepmeans, aes(x = Treatment, y = Dev.Rate.P,
   scale_shape_manual(values = c(21, 19)) + 
   geom_line(aes(linetype = PupateOK)) + 
   scale_linetype_manual(values = c("dotdash", "solid")) + 
-  labs(x = "Temperature Treatment", y = "Development Rate", shape = "Successful Pupation", linetype = "Successful Pupation")
+  labs(x = "Mean Rearing Temperature", y = "Development Rate", shape = "Successful Pupation", linetype = "Successful Pupation")
 
 devratepgraph
 ```
@@ -184,9 +184,9 @@ devrateeBOTHgraph <- ggplot(data = devrateeboth, aes(x = Trt, y = Dev.Rate.E, gr
   geom_point(size = 3) + 
   geom_errorbar(aes(ymin = Dev.Rate.E - se, ymax = Dev.Rate.E + se), width = 0.3, linetype = "solid") + 
   geom_line() + 
-  labs(x = "Temperature Treatment", y = "Development Rate", group = "Experiment", linetype = "Experiment", shape = "Experiment") + 
-  scale_linetype_manual(values = c("dotted", "dashed"), labels = c("Blocks 1+2", "Pupal Expt." )) + 
-  scale_shape_manual(values = c(4,5), labels = c("Blocks 1+2", "Pupal Expt."))
+  labs(x = "Mean Temperature", y = "Development Rate", group = "Experiment", linetype = "Experiment", shape = "Experiment") + 
+  scale_linetype_manual(values = c("dotted", "dashed"), labels = c("Rearing Temperature", "Pupal Temperature" )) + 
+  scale_shape_manual(values = c(4,5), labels = c("Rearing Temperature", "Pupal Temperature"))
 
 devrateeBOTHgraph
 
@@ -264,7 +264,7 @@ survgraph <- ggplot(data = survdata, aes(x = Treatment, y = surv.perc, group = B
   geom_line(aes(linetype = Block)) + 
   scale_linetype_manual(values = c("dashed", "dotted")) + 
   ylim(0, 1) + 
-  labs(x = "Temperature treatment", y = "Proportion survival to pupation (including LPIs)")
+  labs(x = "Mean Rearing Temperature", y = "Proportion survival to pupation (including LPIs)")
 
 survgraph
 ```
@@ -397,11 +397,11 @@ surveclosBOTHgraph <- ggplot(data = survdataeclosblocks, aes(x = Treatment, y = 
   geom_point(size = 3) +
   geom_line() + 
   ylim(0, 1) + 
-  labs(x = "Temperature treatment", y = "Proportion survival to eclosion", group = "Experiment", linetype = "Experiment", shape = "Experiment") + 
+  labs(x = "Mean Temperature", y = "Proportion survival to eclosion", group = "Experiment", linetype = "Experiment", shape = "Experiment") + 
   geom_point(data = survdataeclos, size = 3) + 
   geom_line(data = survdataeclos) + 
-  scale_linetype_manual(values = c("dashed", "dotted"), labels = c("Pupal Expt.", "Blocks 1+2")) + 
-  scale_shape_manual(values = c(5,4), labels = c("Pupal Expt.", "Blocks 1+2"))
+  scale_linetype_manual(values = c("dashed", "dotted"), labels = c("Pupal Temperature", "Rearing Temperature")) + 
+  scale_shape_manual(values = c(5,4), labels = c("Pupal Temperature", "Rearing Temperature"))
   
 surveclosBOTHgraph  
 ```
@@ -440,7 +440,7 @@ pupalmassgraph <- ggplot(data = pupalmeans, aes(x = Treatment, y = Mass.pupa, gr
   scale_shape_manual(values = c(0, 2)) + 
   geom_line(aes(linetype = Block)) + 
   scale_linetype_manual(values = c("dashed", "dotted")) + 
-  labs(x = "Temperature Treatment", y = "Pupal Mass", shape = "Block", linetype = "Block")
+  labs(x = "Mean Rearing Temperature", y = "Pupal Mass", shape = "Block", linetype = "Block")
 
 pupalmassgraph
 ```
