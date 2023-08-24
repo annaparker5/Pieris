@@ -18,6 +18,7 @@ This is script to clean California larval experiment from Summer 2023, and begin
 library(dplyr)
 library(tidyverse)
 library(Rmisc)
+library(lmerTest)
 ```
 
 ```{r}
@@ -78,6 +79,58 @@ for (i in 1:length(CaliLarvalData$Surv.eclose)){
 }
 ```
 # 2. Anova Analyses 
+
+## Comparing intermediates to successful pupae
+
+## Mass at pupation
+
+```{r}
+masspupae <- lm(Mass.pupa ~ Pupate.ok*Mean.temp, data = CaliLarvalData[CaliLarvalData$Surv.pupa == "Y", ])
+
+anova(masspupae)
+
+summary(masspupae)
+```
+
+
+## Time at pupation
+
+
+```{r}
+timepupae <- lm(Time.pupa ~ Pupate.ok*Mean.temp, data = CaliLarvalData[CaliLarvalData$Surv.pupa == "Y", ])
+
+anova(timepupae)
+
+summary(timepupae)
+```
+
+Drop insignificant interaction term
+
+```{r}
+timepupaeadd <- lm(Time.pupa ~ Pupate.ok + Mean.temp, data = CaliLarvalData[CaliLarvalData$Surv.pupa == "Y", ])
+
+anova(timepupaeadd)
+
+summary(timepupaeadd)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # 3. Work on getting summary data table
 
 ## Add in rates for pupation and eclosion

@@ -7,13 +7,14 @@ date: "2023-08-17"
  Outline:
  0. Packages and data (north carolina and california)
  1. Analyze temperatures- is there significant differences between days or is the temperature of the column consistent?
- 2. 
+ 2. Clean Egg Data for North Carolina
  
  
  
 # 0. Packages and data
 ```{r}
 TempData <- read.csv("~/Desktop/GitHub/Pieris/Egg_Gradient/Daily_temps_cleaned.csv", header = TRUE)
+NCEggData <- read.csv("~/Desktop/GitHub/Pieris/Egg_Gradient/NC_Egg_Gradient.csv", header = TRUE)
 ```
  
 ```{r}
@@ -67,6 +68,17 @@ summary(coolgrad)
 
 Might need to take a closer look at the 20th and 23rd unless I'm mistaken
 
+# 2. Clean NC Egg data
+
+```{r}
+Column <- c(1:12)
+EggSummary <- data.frame(Column, Temperature = NA)
+
+for (i in EggSummary)
+{
+  t = NCEggData[]
+}
+```
 
 
 
