@@ -12,7 +12,7 @@ library(Rmisc)
 ```
 
 ```{r}
-comb <- read.csv("~/Desktop/GitHub/Pieris/CombSurvtoPupation.csv", header = TRUE)
+comb <- read.csv("~/Desktop/GitHub/Pieris/PopulationCombData.csv", header = TRUE)
 ```
 
 
@@ -37,7 +37,7 @@ devratemeans$Treatment <- as.factor(devratemeans$Treatment)
 
 
 ```{r}
-NCWAdevrate <- ggplot(data = devratemeans, aes(x = Treatment, y = Dev.rate, group = Population, linetype = Population, 
+NCWACAdevrate <- ggplot(data = devratemeans, aes(x = Treatment, y = Dev.rate, group = Population, linetype = Population, 
                                        shape = Population)) + 
   theme_bw() + 
   geom_point(size = 3) + 
@@ -48,12 +48,12 @@ NCWAdevrate <- ggplot(data = devratemeans, aes(x = Treatment, y = Dev.rate, grou
   scale_shape_manual(values = c(19, 2, 5)) + 
   geom_errorbar(aes(ymin = Dev.rate - se, ymax = Dev.rate + se), width = 0.3, linetype = "solid")
 
-NCWAdevrate
+NCWACAdevrate
   
 ```
 
 ```{r}
-ggsave("~/Desktop/GitHub/Pieris/NCWAdevrate.png", NCWAdevrate, width = 8, height = 5)
+ggsave("~/Desktop/GitHub/Pieris/NCWACAdevrate.png", NCWACAdevrate, width = 8, height = 5)
 ```
 
 
@@ -75,7 +75,7 @@ massmeans$Treatment <- as.factor(massmeans$Treatment)
 
 
 ```{r}
-NCWAmass <- ggplot(data = massmeans, aes(x = Treatment, y = Mass.pupa, group = Population, linetype = Population, 
+NCWACAmass <- ggplot(data = massmeans, aes(x = Treatment, y = Mass.pupa, group = Population, linetype = Population, 
                                        shape = Population)) + 
   theme_bw() + 
   geom_point(size = 3) + 
@@ -86,13 +86,13 @@ NCWAmass <- ggplot(data = massmeans, aes(x = Treatment, y = Mass.pupa, group = P
   scale_shape_manual(values = c(19, 2, 5)) + 
   geom_errorbar(aes(ymin = Mass.pupa - se, ymax = Mass.pupa + se), width = 0.3, linetype = "solid")
 
-NCWAmass
+NCWACAmass
   
 ```
 
 
 ```{r}
-ggsave("~/Desktop/GitHub/Pieris/NCWAmass.png", NCWAmass, width = 8, height = 5)
+ggsave("~/Desktop/GitHub/Pieris/NCWACAmass.png", NCWACAmass, width = 8, height = 5)
 ```
 
 
@@ -110,59 +110,65 @@ survpercsum
 
 
 ```{r}
-survdata <- data.frame(Treatment = rep(c(16, 21, 26, 30, 34), times = 3), 
+survdata <- data.frame(Treatment = rep(c(16, 21, 26, 30, 34), times = 4), 
                        surv.perc = 0, 
-                       Expt = rep(c("NC", "WA1", "WA2"), each = 5))
+                       Expt = rep(c("NC", "WA1", "WA2", "CA"), each = 5))
 
 survdata$Treatment <- as.factor(survdata$Treatment)
 ```
 
 
 ```{r}
-survdata[1, 2] <- survpercsum[2, 4] / (survpercsum[2, 4] + survpercsum[1, 4])
-survdata[2, 2] <- survpercsum[8, 4] / (survpercsum[8, 4] + survpercsum[7, 4])
-survdata[3, 2] <- survpercsum[14, 4] / (survpercsum[14, 4] + survpercsum[13, 4])
-survdata[4, 2] <- survpercsum[20, 4] / (survpercsum[20, 4] + survpercsum[19, 4])
-survdata[5, 2] <- survpercsum[26, 4] / (survpercsum[26, 4] + survpercsum[25, 4])
+survdata[1, 2] <- survpercsum[4, 4] / (survpercsum[4, 4] + survpercsum[3, 4])
+survdata[2, 2] <- survpercsum[12, 4] / (survpercsum[12, 4] + survpercsum[11, 4])
+survdata[3, 2] <- survpercsum[20, 4] / (survpercsum[20, 4] + survpercsum[19, 4])
+survdata[4, 2] <- survpercsum[28, 4] / (survpercsum[28, 4] + survpercsum[27, 4])
+survdata[5, 2] <- survpercsum[36, 4] / (survpercsum[36, 4] + survpercsum[35, 4])
 
 
 
-survdata[6, 2] <- survpercsum[4, 4] / (survpercsum[4, 4] + survpercsum[3, 4])
-survdata[7, 2] <- survpercsum[10, 4] / (survpercsum[10, 4] + survpercsum[9, 4])
-survdata[8, 2] <- survpercsum[16, 4] / (survpercsum[16, 4] + survpercsum[15, 4])
-survdata[9, 2] <- survpercsum[22, 4] / (survpercsum[22, 4] + survpercsum[21, 4])
-survdata[10, 2] <- survpercsum[28, 4] / (survpercsum[28, 4] + survpercsum[27, 4])
+survdata[6, 2] <- survpercsum[6, 4] / (survpercsum[6, 4] + survpercsum[5, 4])
+survdata[7, 2] <- survpercsum[14, 4] / (survpercsum[14, 4] + survpercsum[13, 4])
+survdata[8, 2] <- survpercsum[22, 4] / (survpercsum[22, 4] + survpercsum[21, 4])
+survdata[9, 2] <- survpercsum[30, 4] / (survpercsum[30, 4] + survpercsum[29, 4])
+survdata[10, 2] <- survpercsum[38, 4] / (survpercsum[38, 4] + survpercsum[37, 4])
 
 
-survdata[11, 2] <- survpercsum[6, 4] / (survpercsum[6, 4] + survpercsum[5, 4])
-survdata[12, 2] <- survpercsum[12, 4] / (survpercsum[12, 4] + survpercsum[11, 4])
-survdata[13, 2] <- survpercsum[18, 4] / (survpercsum[18, 4] + survpercsum[17, 4])
-survdata[14, 2] <- survpercsum[24, 4] / (survpercsum[24, 4] + survpercsum[23, 4])
-survdata[15, 2] <- survpercsum[30, 4] / (survpercsum[30, 4] + survpercsum[29, 4])
+survdata[11, 2] <- survpercsum[8, 4] / (survpercsum[8, 4] + survpercsum[7, 4])
+survdata[12, 2] <- survpercsum[16, 4] / (survpercsum[16, 4] + survpercsum[15, 4])
+survdata[13, 2] <- survpercsum[24, 4] / (survpercsum[24, 4] + survpercsum[23, 4])
+survdata[14, 2] <- survpercsum[32, 4] / (survpercsum[32, 4] + survpercsum[31, 4])
+survdata[15, 2] <- survpercsum[40, 4] / (survpercsum[40, 4] + survpercsum[39, 4])
+
+survdata[16, 2] <- survpercsum[2, 4] / (survpercsum[2, 4] + survpercsum[1, 4])
+survdata[17, 2] <- survpercsum[10, 4] / (survpercsum[10, 4] + survpercsum[9, 4])
+survdata[18, 2] <- survpercsum[18, 4] / (survpercsum[18, 4] + survpercsum[17, 4])
+survdata[19, 2] <- survpercsum[26, 4] / (survpercsum[26, 4] + survpercsum[25, 4])
+survdata[20, 2] <- survpercsum[34, 4] / (survpercsum[34, 4] + survpercsum[33, 4])
 ```
 
 
 
 
 ```{r}
-NCWAsurv <- ggplot(data = survdata, aes(x = Treatment, y = surv.perc, group = Expt, linetype = Expt, 
+NCWACAsurv <- ggplot(data = survdata, aes(x = Treatment, y = surv.perc, group = Expt, linetype = Expt, 
                                        shape = Expt)) + 
   theme_bw() + 
   geom_point(size = 3) + 
   geom_line() +
   labs(x = "Temperature Treatment", y = "Proportion surviving to pupation", group = "Experiment", linetype = "Experiment", 
-       shape = "Experiment") +
-  scale_linetype_manual(values = c("solid", "dashed", "dotted")) + 
-  scale_shape_manual(values = c(19, 2, 5))
+       shape = "Experiment") 
+  #scale_linetype_manual(values = c("solid", "dashed", "dotted", "longdashed")) + 
+  #scale_shape_manual(values = c(19, 2, 5, 1))
 
-NCWAsurv
+NCWACAsurv
   
 ```
 
 
 
 ```{r}
-ggsave("~/Desktop/GitHub/Pieris/NCWAsurv.png", NCWAsurv, width = 8, height = 5)
+ggsave("~/Desktop/GitHub/Pieris/NCWACAsurv.png", NCWACAsurv, width = 8, height = 5)
 ```
 
 ### 3A. Surv to Pupation vs Temp (by population instead of blocked)
@@ -179,28 +185,34 @@ survpercsum
 
 
 ```{r}
-survdata <- data.frame(Treatment = rep(c(16, 21, 26, 30, 34), times = 2), 
+survdata <- data.frame(Treatment = rep(c(16, 21, 26, 30, 34), times = 3), 
                        surv.perc = 0, 
-                       Population = rep(c("NC", "WA"), each = 5))
+                       Population = rep(c("NC", "WA", "CA"), each = 5))
 
 survdata$Treatment <- as.factor(survdata$Treatment)
 ```
 
 
 ```{r}
-survdata[1, 2] <- survpercsum[2, 4] / (survpercsum[2, 4] + survpercsum[1, 4])
-survdata[2, 2] <- survpercsum[6, 4] / (survpercsum[6, 4] + survpercsum[5, 4])
-survdata[3, 2] <- survpercsum[10, 4] / (survpercsum[10, 4] + survpercsum[9, 4])
-survdata[4, 2] <- survpercsum[14, 4] / (survpercsum[14, 4] + survpercsum[13, 4])
-survdata[5, 2] <- survpercsum[18, 4] / (survpercsum[18, 4] + survpercsum[17, 4])
+survdata[1, 2] <- survpercsum[4, 4] / (survpercsum[4, 4] + survpercsum[3, 4])
+survdata[2, 2] <- survpercsum[10, 4] / (survpercsum[10, 4] + survpercsum[9, 4])
+survdata[3, 2] <- survpercsum[16, 4] / (survpercsum[16, 4] + survpercsum[15, 4])
+survdata[4, 2] <- survpercsum[22, 4] / (survpercsum[22, 4] + survpercsum[21, 4])
+survdata[5, 2] <- survpercsum[28, 4] / (survpercsum[28, 4] + survpercsum[27, 4])
 
 
 
-survdata[6, 2] <- survpercsum[4, 4] / (survpercsum[4, 4] + survpercsum[3, 4])
-survdata[7, 2] <- survpercsum[8, 4] / (survpercsum[8, 4] + survpercsum[7, 4])
-survdata[8, 2] <- survpercsum[12, 4] / (survpercsum[12, 4] + survpercsum[11, 4])
-survdata[9, 2] <- survpercsum[16, 4] / (survpercsum[16, 4] + survpercsum[15, 4])
-survdata[10, 2] <- survpercsum[20, 4] / (survpercsum[20, 4] + survpercsum[19, 4])
+survdata[6, 2] <- survpercsum[6, 4] / (survpercsum[6, 4] + survpercsum[5, 4])
+survdata[7, 2] <- survpercsum[12, 4] / (survpercsum[12, 4] + survpercsum[11, 4])
+survdata[8, 2] <- survpercsum[18, 4] / (survpercsum[18, 4] + survpercsum[17, 4])
+survdata[9, 2] <- survpercsum[24, 4] / (survpercsum[24, 4] + survpercsum[23, 4])
+survdata[10, 2] <- survpercsum[30, 4] / (survpercsum[30, 4] + survpercsum[29, 4])
+
+survdata[11, 2] <- survpercsum[2, 4] / (survpercsum[2, 4] + survpercsum[1, 4])
+survdata[12, 2] <- survpercsum[8, 4] / (survpercsum[8, 4] + survpercsum[7, 4])
+survdata[13, 2] <- survpercsum[14, 4] / (survpercsum[14, 4] + survpercsum[13, 4])
+survdata[14, 2] <- survpercsum[20, 4] / (survpercsum[20, 4] + survpercsum[19, 4])
+survdata[15, 2] <- survpercsum[26, 4] / (survpercsum[26, 4] + survpercsum[25, 4])
 
 
 ```
@@ -209,7 +221,7 @@ survdata[10, 2] <- survpercsum[20, 4] / (survpercsum[20, 4] + survpercsum[19, 4]
 
 
 ```{r}
-NCWAsurv <- ggplot(data = survdata, aes(x = Treatment, y = surv.perc, group = Population, linetype = Population, 
+NCWACAsurv <- ggplot(data = survdata, aes(x = Treatment, y = surv.perc, group = Population, linetype = Population, 
                                        shape = Population)) + 
   theme_bw() + 
   geom_point(size = 3) + 
@@ -219,12 +231,12 @@ NCWAsurv <- ggplot(data = survdata, aes(x = Treatment, y = surv.perc, group = Po
   scale_linetype_manual(values = c("solid", "dashed", "dotted")) + 
   scale_shape_manual(values = c(19, 2, 5))
 
-NCWAsurv
+NCWACAsurv
   
 ```
 
 
 
 ```{r}
-ggsave("~/Desktop/GitHub/Pieris/NCWAsurv.png", NCWAsurv, width = 8, height = 5)
+ggsave("~/Desktop/GitHub/Pieris/NCWACAsurv.png", NCWACAsurv, width = 8, height = 5)
 ```
