@@ -97,6 +97,22 @@ for(i in 1:length(CA$Time.prepupal.death)) {
 }
 ```
 
+
+Also, lets change all "yes" and "no" to "Y" and "N" for consistency 
+
+```{r}
+CA <- data.frame(lapply(CA, function(x) {
+          gsub("no", "N", x)
+}))
+
+CA <- data.frame(lapply(CA, function(x) {
+          gsub("yes", "Y", x)
+}))
+
+```
+
+
+
 NC pop
 
 ```{r}
