@@ -14,11 +14,16 @@ date: "2023-08-17"
 # 0. Packages and data
 ```{r}
 TempData <- read.csv("~/Desktop/GitHub/Pieris/Egg_Gradient/Daily_temps_cleaned.csv", header = TRUE)
-NCEggData <- read.csv("~/Desktop/GitHub/Pieris/Egg_Gradient/NC_Egg_Gradient.csv", header = TRUE)
+NCEggGrad <- read.csv("~/Desktop/GitHub/Pieris/NCEggGrad.csv", header = TRUE)
+NCEggCham <- read.csv("~/Desktop/Github/Pieris/NCEggChambers.csv", header = TRUE)
 ```
  
 ```{r}
 library(lmerTest)
+library(Rmisc)
+library(dplyr)
+library(ggplot2)
+library(dbplyr)
 ```
 
 #1. Analyze temperatures 
@@ -68,17 +73,171 @@ summary(coolgrad)
 
 Might need to take a closer look at the 20th and 23rd unless I'm mistaken
 
-# 2. Clean NC Egg data
+#2. Egg Gradient Analysis (NC)
+
+## Development Rate
+```{r}
+DevEgg <- NCEggGrad %>%
+  select(ID, Hours_calculated, Avg_temp)
+
+DevEgg <- DevEgg[complete.cases(DevEgg), ]
+
+```
 
 ```{r}
-Column <- c(1:12)
-EggSummary <- data.frame(Column, Temperature = NA)
+DevEgg$Dev.rate <- 1/DevEgg$Hours_calculated
+```
 
-for (i in EggSummary)
-{
-  t = NCEggData[]
+
+```{r}
+NCEggDevGraph <- ggplot(data = DevEgg, aes(x = Avg_temp, y = Dev.rate)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_smooth(method= "lm")
+  labs(x = "Average Temperature", y = "Development Rate (1/hours to hatch)")
+NCEggDevGraph
+
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/NCEggDevRate.png", NCEggDevGraph, width = 8, height = 5)
+```
+
+
+```{r}
+NCEggGrad$Block <- NA
+
+for (i in 1:length(NCEggGrad$Block)){
+  if(i < 97){
+    NCEggGrad[i,10] <- "1G"
+  } else if(i > 98){
+    NCEggGrad[i,10] <- "2G"
+  }
+}
+
+```
+
+```{r}
+NCEggGrad$Hatch.Ok <- NA
+
+for (i in 1:length(NCEggGrad$Hatch.Ok)){
+  if(is.na(NCEggGrad[i,7])== TRUE){
+    NCEggGrad[i,11] <- "No"
+  } else if(is.na(NCEggGrad[i,7])== FALSE){
+    NCEggGrad[i,11] <- "Yes"
+  }
 }
 ```
+
+```{r}
+NCEggGrad$Dev.rate <- 1/NCEggGrad$Days_to_hatch
+
+NCEggGrad$Expt <- "Gradient"
+```
+
+## Survival 
+
+```{r}
+EggGradSurv <- select(NCEggGrad, Column, Avg_temp, Block, Hatch.Ok, Days_to_hatch, Expt)
+```
+
+```{r}
+GradSurvSum <- summarise(EggGradSurv)
+```
+
+
+
+#3. Egg Chamber Analysis (NC)
+
+```{r}
+ChamberBlocks <- lm(Time.Hatch ~ Block*Treatment, data = NCEggCham)
+
+ChamberBlocks
+
+anova(ChamberBlocks)
+
+summary(ChamberBlocks)
+```
+
+There is a significant block effect in the egg chamber data...
+
+```{r}
+NCEggCham$Dev.rate <- 1/NCEggCham$Time.Hatch
+NCEggCham$Expt <- "Chamber"
+
+for (i in 1:length(NCEggCham$Hatch.Ok)){
+  if(is.na(NCEggCham[i,8])== TRUE){
+    NCEggCham[i,6] <- "No"
+  } else if(is.na(NCEggCham[i,8])== FALSE){
+    NCEggCham[i,6] <- "Yes"
+  }
+}
+```
+
+
+```{r}
+colnames(NCEggCham)[3]<- "Avg_temp"
+```
+
+```{r}
+EggChamSum <- summarySE(data = NCEggCham[NCEggCham$Hatch.Ok == "Yes", ], measurevar = "Dev.rate", groupvars = c("Avg_temp", "Block"))
+
+EggChamSum
+
+EggChamSum$Block <- as.factor(EggChamSum$Block)
+EggChamSum$Avg_temp <- as.factor(EggChamSum$Avg_temp)
+EggChamSum %>%
+  select(Avg_temp, Block, N, Dev.rate, se)
+```
+
+
+```{r}
+EggChamDevGraph <- ggplot(data = EggChamSum, aes(x = Avg_temp, y = Dev.rate, group = Block, color = Block)) + 
+  theme_bw() + 
+  geom_errorbar(aes(ymin = Dev.rate - se, ymax = Dev.rate + se)) + 
+  geom_point(size = 3) + 
+  scale_color_manual(values = c("#1E88E5","lime green")) + 
+  labs(x = "Average Temperature", y = "Development Rate (1/days to hatch)")
+
+EggChamDevGraph
+
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/NCChamberEggDevRate.png", EggChamDevGraph, width = 8, height = 5)
+```
+
+
+
+#4. Combining Egg Chamber and Egg Gradient for NC
+Lets try and graph all of the points of both egg chamber and egg gradient on one graph, separating by blocks 
+
+```{r}
+Chambershort <- select(NCEggCham, Avg_temp, Hatch.Ok, Block, Dev.rate, Expt)
+Gradientshort <- select(NCEggGrad, Avg_temp, Hatch.Ok, Block, Dev.rate, Expt)
+
+AllNCEggData<- rbind(Chambershort, Gradientshort)
+
+```
+
+
+```{r}
+AllNCEggDev <- ggplot(data = AllNCEggData[AllNCEggData$Hatch.Ok == "Yes", ], aes(x = Avg_temp, y = Dev.rate, color = Expt, shape = Block)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  scale_color_manual(values = c("#1E88E5","lime green", "orange", "purple")) + 
+  scale_shape_manual(values = c(16, 15, 17, 18))+
+  labs(x = "Average Temperature", y = "Development Rate (1/days to hatch)")
+  
+AllNCEggDev
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/NCEggComp_Color1", All, width = 8, height = 5)
+```
+
+
+
 
 
 

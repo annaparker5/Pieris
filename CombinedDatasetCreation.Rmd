@@ -13,7 +13,8 @@ library(lubridate)
 
 
 ```{r}
-NC <- read.csv("~/Desktop/GitHub/Pieris/North_Carolina/NC_Larval_and_Realistic_Temps/Data/CleanedRound1.csv", header = T)
+NC1 <- read.csv("~/Desktop/GitHub/Pieris/North_Carolina/NC_Larval_and_Realistic_Temps/Data/CleanedRound1.csv", header = T)
+NC2 <- read.csv("~/Desktop/GitHub/Pieris/NCLarval2023.csv", header= T)
 WA1 <- read.csv("~/Desktop/GitHub/Pieris/Washington/DataWA/CleanedBlock1.csv", header = T)
 WA1wide <- read.csv("~/Desktop/GitHub/Pieris/Washington/DataWA/WABlock1Dev.csv", header = T)
 WA2 <- read.csv("~/Desktop/GitHub/Pieris/Washington/DataWA/CleanedBlock2.csv", header = T)
@@ -113,21 +114,94 @@ CA <- data.frame(lapply(CA, function(x) {
 
 
 
-NC pop
+NC pop round 1
 
 ```{r}
-NC$Time.prepupal.death <- NA
+NC1$Time.prepupal.death <- NA
 ```
 
 ```{r}
-for(i in 1:length(NC$Time.prepupal.death)) { 
-  if (NC[i, 19] == "Y"){
-    NC[i, 30] <- NA
-  } else if (NC[i, 19] != "Y"){
-    NC[i, 30] <- NC[i, 27]
+for(i in 1:length(NC1$Time.prepupal.death)) { 
+  if (NC1[i, 19] == "Y"){
+    NC1[i, 30] <- NA
+  } else if (NC1[i, 19] != "Y"){
+    NC1[i, 30] <- NC1[i, 27]
   }
 }
 ```
+
+NC pop round 2
+
+Fill unfilled columns at survival for each stage
+
+## Surv.4th
+```{r}
+for (i in 1:length(NC2$Surv.4th)){
+  if(is.na(NC2[i,9])== TRUE){
+    NC2[i,7] <- "N"
+  } else if(is.na(NC2[i,9])== FALSE){
+    NC2[i,7] <- "Y"
+  }
+}
+```
+
+## Surv.5th
+```{r}
+for (i in 1:length(NC2$Surv.5th)){
+  if(is.na(NC2[i,13])== TRUE){
+    NC2[i,11] <- "N"
+  } else if(is.na(NC2[i,13])== FALSE){
+    NC2[i,11] <- "Y"
+  }
+}
+```
+
+## Surv.pupa
+```{r}
+for (i in 1:length(NC2$Surv.pupa)){
+  if(is.na(NC2[i,17])== TRUE){
+    NC2[i,15] <- "N"
+  } else if(is.na(NC2[i,17])== FALSE){
+    NC2[i,15] <- "Y"
+  }
+}
+```
+
+## Surv.eclose
+```{r}
+for (i in 1:length(NC2$Surv.eclose)){
+  if(is.na(NC2[i,22])== TRUE){
+    NC2[i,20] <- "N"
+  } else if(is.na(NC2[i,22])== FALSE){
+    NC2[i,20] <- "Y"
+  }
+}
+```
+
+first I need to make sure that all intermediates are labeled as dead on the day they failed to pupate
+```{r}
+for (i in 1:length(NC2$Date.dead)) {
+  if  (NC2[i, 19] == "N"){
+    NC2[i, 26] = NC2[i,16]}
+}
+```
+
+Next lets add the prepupual death column
+
+```{r}
+NC2$Time.prepupal.death <- NA
+```
+
+```{r}
+for(i in 1:length(NC2$Time.prepupal.death)) { 
+  if (NC2[i, 19] == "Y"){
+    NC2[i, 29] <- NA
+  } else if (NC2[i, 19] != "yes"){
+    NC2[i, 29] <- NC2[i, 27]
+  }
+}
+```
+
 
 
 
@@ -281,12 +355,22 @@ CA$Population <- "CA"
 
 
 ```{r}
-NC <- NC %>%
+NC1 <- NC1 %>%
   select(CID = CID, Treatment = Mean.Temp, Age.death = Time.prepupal.death, Surv.pupa, PupateOK = PupateOk, 
          Age.pupa = Time.pupa, Mass.pupa = Mass.pupa)
 
-NC$Expt <- "NC1"
-NC$Population <- "NC"
+NC1$Expt <- "NC1"
+NC1$Population <- "NC"
+```
+
+
+```{r}
+NC2 <- NC2 %>%
+  select(CID = CID, Treatment = Mean.temp, Age.death = Time.prepupal.death, Surv.pupa, PupateOK = Pupate.ok, 
+         Age.pupa = Time.pupa, Mass.pupa = Mass.pupa)
+
+NC2$Expt <- "NC2"
+NC2$Population <- "NC"
 ```
 
 ```{r}
@@ -319,7 +403,9 @@ WA2merge$Population <- "WA"
 ## 3. Combine and output
 
 ```{r}
-output <- rbind(NC, WA1merge)
+output <- rbind(NC1, NC2)
+
+output <-rbind(output, WA1merge)
 
 output <- rbind(output, WA2merge)
 
@@ -332,5 +418,13 @@ output <- rbind(output, CA)
 write.csv(output, file = "~/Desktop/GitHub/Pieris/PopulationCombData.csv")
 ```
 
+##4. Analysis
+
+```{r}
+mod1<- lm(Age.pupa ~ Treatment * Population, data= output)
+
+summary(mod1)
+anova(mod1)
+```
 
 
