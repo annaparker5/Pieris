@@ -343,44 +343,42 @@ WA2wide$Age.prepupal.death <- WA2wide$Prepupal.death.day - WA2wide$day.hatch
 
 
 ```{r}
-CA <- CA %>%
+CASum <- CA %>%
   select(CID = CID, Treatment = Mean.temp, Age.death = Time.prepupal.death, Surv.pupa, PupateOK = Pupate.ok, 
          Age.pupa = Time.pupa, Mass.pupa = Mass.pupa)
 
-CA$Expt <- "CA"
-CA$Population <- "CA"
+CASum$Expt <- "CA"
+CASum$Population <- "CA"
 ```
 
 
-
-
 ```{r}
-NC1 <- NC1 %>%
+NC1Sum <- NC1 %>%
   select(CID = CID, Treatment = Mean.Temp, Age.death = Time.prepupal.death, Surv.pupa, PupateOK = PupateOk, 
          Age.pupa = Time.pupa, Mass.pupa = Mass.pupa)
 
-NC1$Expt <- "NC1"
-NC1$Population <- "NC"
+NC1Sum$Expt <- "NC1"
+NC1Sum$Population <- "NC"
 ```
 
 
 ```{r}
-NC2 <- NC2 %>%
+NC2Sum <- NC2 %>%
   select(CID = CID, Treatment = Mean.temp, Age.death = Time.prepupal.death, Surv.pupa, PupateOK = Pupate.ok, 
          Age.pupa = Time.pupa, Mass.pupa = Mass.pupa)
 
-NC2$Expt <- "NC2"
-NC2$Population <- "NC"
+NC2Sum$Expt <- "NC2"
+NC2Sum$Population <- "NC"
 ```
 
 ```{r}
 WA1wide <- WA1wide %>%
   select(CID = CID, Treatment = Treatment, Age.death = Age.prepupal.death, Mass.pupa = Mass.pupa)
 
-WA1 <- WA1 %>%
+WA1Sum <- WA1 %>%
   select(CID = CID, Treatment = Treatment, Surv.pupa, PupateOK, Age.pupa = DaysHtoP)
 
-WA1merge <- merge(WA1wide, WA1, by = c("CID", "Treatment"))
+WA1merge <- merge(WA1wide, WA1Sum, by = c("CID", "Treatment"))
 
 WA1merge$Expt <- "WA1"
 WA1merge$Population <- "WA"
@@ -391,10 +389,10 @@ WA1merge$Population <- "WA"
 WA2wide <- WA2wide %>%
   select(CID = CID, Treatment = Treatment, Age.death = Age.prepupal.death, Mass.pupa = Mass.pupa)
 
-WA2 <- WA2 %>%
+WA2Sum <- WA2 %>%
   select(CID = CID, Treatment = Treatment, Surv.pupa, PupateOK, Age.pupa = DaysHtoP)
 
-WA2merge <- merge(WA2wide, WA2, by = c("CID", "Treatment"))
+WA2merge <- merge(WA2wide, WA2Sum, by = c("CID", "Treatment"))
 
 WA2merge$Expt <- "WA2"
 WA2merge$Population <- "WA"
@@ -403,13 +401,13 @@ WA2merge$Population <- "WA"
 ## 3. Combine and output
 
 ```{r}
-output <- rbind(NC1, NC2)
+output <- rbind(NC1Sum, NC2Sum)
 
 output <-rbind(output, WA1merge)
 
 output <- rbind(output, WA2merge)
 
-output <- rbind(output, CA)
+output <- rbind(output, CASum)
 
 ```
 
@@ -418,7 +416,25 @@ output <- rbind(output, CA)
 write.csv(output, file = "~/Desktop/GitHub/Pieris/PopulationCombData.csv")
 ```
 
-##4. Analysis
+##4. Survival Analysis
+
+```{r}
+population <- c("North Carolina", "Washington", "California")
+
+NCT <- length(NC1$CID) + length(NC2$CID)
+WAT <- length(WA1$CID) + length(WA2$CID)
+Total <- c(NCT, WAT, length(CA$CID))
+
+
+
+CombSurv <- data.frame(population, Total)
+```
+
+
+
+
+
+##5. Random Analysis
 
 ```{r}
 mod1<- lm(Age.pupa ~ Treatment * Population, data= output)
