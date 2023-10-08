@@ -418,20 +418,204 @@ write.csv(output, file = "~/Desktop/GitHub/Pieris/PopulationCombData.csv")
 
 ##4. Survival Analysis
 
+###4a. NC1 
 ```{r}
-population <- c("North Carolina", "Washington", "California")
+NC1SurvSum <- summarySE(data = NC1, 
+                         measurevar = "Mass.pupa", 
+                         groupvars = c("Mean.Temp", "Surv.pupa"))
+NC1SurvSum
+```
+```{r}
+NC1SurvData <- data.frame(Mean.Temp = c(16, 21, 26, 30, 34), 
+                       surv.perc = 0, 
+                       Population = "NC",
+                       Group = "NC1")
 
-NCT <- length(NC1$CID) + length(NC2$CID)
-WAT <- length(WA1$CID) + length(WA2$CID)
-Total <- c(NCT, WAT, length(CA$CID))
-
-
-
-CombSurv <- data.frame(population, Total)
+NC1SurvData$Mean.Temp <- as.factor(NC1SurvData$Mean.Temp)
+NC1SurvData$Group = as.factor(NC1SurvData$Group)
 ```
 
 
+```{r}
+NC1SurvData[1, 2] <- NC1SurvSum[2, 3] / (NC1SurvSum[2, 3] + NC1SurvSum[1, 3])
+NC1SurvData[2, 2] <- NC1SurvSum[4, 3] / (NC1SurvSum[4, 3] + NC1SurvSum[3, 3])
+NC1SurvData[3, 2] <- NC1SurvSum[6, 3] / (NC1SurvSum[6, 3] + NC1SurvSum[5, 3])
+NC1SurvData[4, 2] <- NC1SurvSum[8, 3] / (NC1SurvSum[8, 3] + NC1SurvSum[7, 3])
+NC1SurvData[5, 2] <- NC1SurvSum[10, 3] / (NC1SurvSum[10, 3] + NC1SurvSum[9, 3])
+```
 
+###4b. NC2 
+```{r}
+NC2SurvSum <- summarySE(data = NC2, 
+                         measurevar = "Mass.pupa", 
+                         groupvars = c("Mean.temp", "Surv.pupa"))
+NC2SurvSum
+```
+
+
+```{r}
+NC2SurvData <- data.frame(Mean.Temp = c(16, 21, 26, 30, 34), 
+                       surv.perc = 0, 
+                       Population = "NC",
+                       Group = "NC2")
+
+NC2SurvData$Mean.Temp <- as.factor(NC2SurvData$Mean.Temp)
+NC2SurvData$Group = as.factor(NC2SurvData$Group)
+```
+
+
+```{r}
+NC2SurvData[1, 2] <- NC2SurvSum[2, 3] / (NC2SurvSum[2, 3] + NC2SurvSum[1, 3])
+NC2SurvData[2, 2] <- NC2SurvSum[4, 3] / (NC2SurvSum[4, 3] + NC2SurvSum[3, 3])
+NC2SurvData[3, 2] <- NA
+NC2SurvData[4, 2] <- NA
+NC2SurvData[5, 2] <- NC2SurvSum[6, 3] / (NC2SurvSum[6, 3] + NC2SurvSum[5, 3])
+```
+
+
+###4c. WA1
+```{r}
+WA1SurvSum <- summarySE(data = WA1, 
+                         measurevar = "Mass.pupa", 
+                         groupvars = c("Treatment", "Surv.pupa"))
+WA1SurvSum
+```
+
+
+```{r}
+WA1SurvData <- data.frame(Mean.Temp = c(16, 21, 26, 30, 34), 
+                       surv.perc = 0, 
+                       Population = "WA",
+                       Group = "WA1")
+
+WA1SurvData$Mean.Temp <- as.factor(WA1SurvData$Mean.Temp)
+WA1SurvData$Group = as.factor(WA1SurvData$Group)
+```
+
+
+```{r}
+WA1SurvData[1, 2] <- WA1SurvSum[2, 3] / (WA1SurvSum[2, 3] + WA1SurvSum[1, 3])
+WA1SurvData[2, 2] <- WA1SurvSum[4, 3] / (WA1SurvSum[4, 3] + WA1SurvSum[3, 3])
+WA1SurvData[3, 2] <- WA1SurvSum[6, 3] / (WA1SurvSum[6, 3] + WA1SurvSum[5, 3])
+WA1SurvData[4, 2] <- WA1SurvSum[8, 3] / (WA1SurvSum[8, 3] + WA1SurvSum[7, 3])
+WA1SurvData[5, 2] <- WA1SurvSum[10, 3] / (WA1SurvSum[10, 3] + WA1SurvSum[9, 3])
+```
+
+###4d. WA2
+```{r}
+WA2SurvSum <- summarySE(data = WA2, 
+                         measurevar = "Mass.pupa", 
+                         groupvars = c("Treatment", "Surv.pupa"))
+WA2SurvSum
+```
+
+
+```{r}
+WA2SurvData <- data.frame(Mean.Temp = c(16, 21, 26, 30, 34), 
+                       surv.perc = 0, 
+                       Population = "WA",
+                       Group = "WA2")
+
+WA2SurvData$Mean.Temp <- as.factor(WA2SurvData$Mean.Temp)
+WA2SurvData$Group = as.factor(WA2SurvData$Group)
+```
+
+
+```{r}
+WA2SurvData[1, 2] <- WA2SurvSum[2, 3] / (WA2SurvSum[2, 3] + WA2SurvSum[1, 3])
+WA2SurvData[2, 2] <- WA2SurvSum[4, 3] / (WA2SurvSum[4, 3] + WA2SurvSum[3, 3])
+WA2SurvData[3, 2] <- WA2SurvSum[6, 3] / (WA2SurvSum[6, 3] + WA2SurvSum[5, 3])
+WA2SurvData[4, 2] <- WA2SurvSum[8, 3] / (WA2SurvSum[8, 3] + WA2SurvSum[7, 3])
+WA2SurvData[5, 2] <- WA2SurvSum[10, 3] / (WA2SurvSum[10, 3] + WA2SurvSum[9, 3])
+```
+
+
+###4e. CA
+```{r}
+CASurvSum <- summarySE(data = CA, 
+                         measurevar = "Mass.pupa", 
+                         groupvars = c("Mean.temp", "Surv.pupa"))
+CASurvSum
+```
+
+
+```{r}
+CASurvData <- data.frame(Mean.Temp = c(16, 21, 26, 30, 34), 
+                       surv.perc = 0, 
+                       Population = "CA")
+
+CASurvData$Mean.Temp <- as.factor(CASurvData$Mean.Temp)
+```
+
+
+```{r}
+CASurvData[1, 2] <- CASurvSum[2, 3] / (CASurvSum[2, 3] + CASurvSum[1, 3])
+CASurvData[2, 2] <- CASurvSum[4, 3] / (CASurvSum[4, 3] + CASurvSum[3, 3])
+CASurvData[3, 2] <- CASurvSum[6, 3] / (CASurvSum[6, 3] + CASurvSum[5, 3])
+CASurvData[4, 2] <- CASurvSum[8, 3] / (CASurvSum[8, 3] + CASurvSum[7, 3])
+CASurvData[5, 2] <- CASurvSum[10, 3] / (CASurvSum[10, 3] + CASurvSum[9, 3])
+```
+
+
+###4f. Combine survival data for each population 
+
+```{r}
+NCCombSurv <- merge(NC1SurvData, NC2SurvData, by = c("Mean.Temp","Population")) 
+NCCombSurv <- NCCombSurv %>% select(Mean.Temp, Population, surv.perc.x, surv.perc.y)
+NCCombSurv$surv.perc <- rowMeans(NCCombSurv[3:4], na.rm = TRUE)
+NCCombSurv <- NCCombSurv %>% select(Mean.Temp, surv.perc, Population)
+
+WACombSurv <- merge(WA1SurvData, WA2SurvData, by = c("Mean.Temp", "Population"))
+WACombSurv <- WACombSurv %>% select(Mean.Temp, Population, surv.perc.x, surv.perc.y)
+WACombSurv$surv.perc <- rowMeans(WACombSurv[3:4], na.rm= TRUE)
+WACombSurv <- WACombSurv %>% select(Mean.Temp, surv.perc, Population)
+
+combsurv <- rbind(NCCombSurv, WACombSurv)
+
+combsurv <-rbind(combsurv, CASurvData)
+
+```
+
+#This doesn't work anymore after data changed
+```{r}
+combsurvlinegraph <- ggplot(data = combsurv, aes(x = Mean.Temp, y = surv.perc, group = Population, color = Population)) + 
+  theme_bw() + 
+  geom_point(size = 2) + 
+  geom_line() + 
+  ylim(0, 1) + 
+   scale_color_manual(values = c("purple", "#1E88E5", "orange", "lime green", "#D81B60")) + 
+  labs(x = "Mean Rearing Temperature", y = "Proportion survival to pupation")
+
+combsurvlinegraph
+```
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Survivalplotuncombined.png", combsurvlinegraph, width = 8, height = 5)
+```
+
+```{r}
+combsurvgraph <- ggplot(data = combsurv, aes(x = Mean.Temp, y = surv.perc, group = Population, color = Population)) + 
+  theme_bw() + 
+  geom_point(size = 2) + 
+  geom_line() + 
+  ylim(0, 1) + 
+   scale_color_manual(values = c("purple", "#1E88E5", "orange", "lime green", "#D81B60")) + 
+  labs(x = "Mean Rearing Temperature", y = "Proportion survival to pupation")
+
+combsurvgraph
+```
+
+```{r}
+combsurvbargraph <- ggplot(data = combsurv, aes(x= Mean.Temp, y= surv.perc, fill = Population)) + 
+  geom_bar(stat = "identity", position= position_dodge())+ 
+  theme_bw() +
+  scale_fill_manual(values = c("purple", "#1E88E5", "orange", "lime green", "#D81B60")) + 
+  labs(x = "Mean Rearing Temperature", y = "Proportion survival to pupation")
+
+combsurvbargraph
+```
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Survivalbarcombined.png", combsurvbargraph, width = 8, height = 5)
+```
 
 
 ##5. Random Analysis
