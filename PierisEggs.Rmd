@@ -16,6 +16,7 @@ date: "2023-08-17"
 TempData <- read.csv("~/Desktop/GitHub/Pieris/Egg_Gradient/Daily_temps_cleaned.csv", header = TRUE)
 NCEggGrad <- read.csv("~/Desktop/GitHub/Pieris/NCEggGrad.csv", header = TRUE)
 NCEggCham <- read.csv("~/Desktop/Github/Pieris/NCEggChambers.csv", header = TRUE)
+CAEggGrad <- read.csv("~/Desktop/Github/Pieris/CAEggGrad.csv", header = TRUE)
 ```
  
 ```{r}
@@ -86,6 +87,7 @@ DevEgg <- DevEgg[complete.cases(DevEgg), ]
 
 ```{r}
 DevEgg$Dev.rate <- 1/DevEgg$Hours_calculated
+DevEgg$Population <- "NC"
 ```
 
 
@@ -134,6 +136,56 @@ NCEggGrad$Dev.rate <- 1/NCEggGrad$Days_to_hatch
 
 NCEggGrad$Expt <- "Gradient"
 ```
+
+
+
+#3. Egg Gradient Analysis (CA)
+
+## Development Rate
+```{r}
+DevEggCA <- CAEggGrad %>%
+  select(ID, Hours_calculated, Avg_temp)
+
+DevEggCA <- DevEggCA[complete.cases(DevEggCA), ]
+
+```
+
+```{r}
+DevEggCA$Dev.rate <- 1/DevEggCA$Hours_calculated
+DevEggCA$Population <- "CA"
+```
+
+
+```{r}
+CAEggDevGraph <- ggplot(data = DevEggCA, aes(x = Avg_temp, y = Dev.rate)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_smooth(method= "lm")
+  labs(x = "Average Temperature", y = "Development Rate (1/hours to hatch)")
+CAEggDevGraph
+
+```
+```{r}
+CombEggGradData <- rbind(DevEggCA, DevEgg)
+```
+
+```{r}
+CombEggGradGraph <- ggplot(data = CombEggGradData,  aes(x = Avg_temp, y = Dev.rate, group = Population, color = Population, linetype = Population, shape = Population)) +
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_smooth(method= "lm", se = FALSE) +
+  xlim(12, 35) +
+  scale_color_manual(values = c("#1E88E5", "orange")) +
+  scale_linetype_manual(values = c("solid", "dashed")) +
+  scale_shape_manual(values = c(19, 17)) + 
+  labs(x = "Average Temperature", y = "Development Rate (1/hours to hatch)")
+  
+CombEggGradGraph
+```
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/NCCAEggDevRate.png", CombEggGradGraph, width = 8, height = 5)
+```
+
 
 ## Survival 
 

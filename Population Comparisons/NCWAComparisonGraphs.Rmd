@@ -13,6 +13,7 @@ library(Rmisc)
 
 ```{r}
 comb <- read.csv("~/Desktop/GitHub/Pieris/PopulationCombData.csv", header = TRUE)
+pupalcomb <- read.csv("~/Desktop/GitHub/Pieris/PupalCombData.csv", header = TRUE)
 ```
 
 
@@ -56,6 +57,26 @@ NCWACAdevrate
 ggsave("~/Desktop/GitHub/Pieris/NCWACAdevrate.png", NCWACAdevrate, width = 8, height = 5)
 ```
 
+```{r}
+NCWACAdevrate2 <- ggplot(data = devratemeans, aes(x = Treatment, y = Dev.rate, group = Population, linetype = Population, 
+                                       shape = Population, color = Population)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_line() +
+  labs(x = "Mean Rearing Temperature", y = "Development Rate", group = "Population", linetype = "Population", 
+       shape = "Population") +
+  scale_linetype_manual(values = c("solid", "dashed", "dotted")) + 
+  scale_shape_manual(values = c(19, 17, 5)) + 
+  scale_color_manual(values = c("#1E88E5", "orange", "limegreen")) +
+  xlim(12,35)+
+  geom_errorbar(aes(ymin = Dev.rate - se, ymax = Dev.rate + se), width = 0.3, linetype = "solid")
+
+NCWACAdevrate2
+  
+```
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/CombLarvalDevRateColored.png", NCWACAdevrate2, width = 8, height = 5)
+```
 
 
 ## 2. Pupal mass vs. temp
@@ -63,7 +84,7 @@ ggsave("~/Desktop/GitHub/Pieris/NCWACAdevrate.png", NCWACAdevrate, width = 8, he
   
 
 ```{r}
-massmeans <- summarySE(data = comb[comb$Surv.pupa == "Y" & comb$PupateOK == "Y", ], 
+massmeans <- summarySE(data = comb[comb$Surv.pupa == "Y" & comb$PupateOK == "Y" & !is.na(comb$Mass.pupa), ], 
                                measurevar = "Mass.pupa", 
                                groupvars = c("Treatment", "Population"))
 
@@ -240,3 +261,82 @@ NCWACAsurv
 ```{r}
 ggsave("~/Desktop/GitHub/Pieris/NCWACAsurv.png", NCWACAsurv, width = 8, height = 5)
 ```
+
+
+North Carolina Experiment Comparisons
+
+```{r}
+NCComb <- comb[comb$Population == "NC", ]
+```
+
+```{r}
+NCdevratemeans <- summarySE(data = NCComb[NCComb$Surv.pupa == "Y", ], 
+                               measurevar = "Dev.rate", 
+                               groupvars = c("Treatment"))
+
+NCdevratemeans
+
+NCdevratemeans$Treatment <- as.factor(NCdevratemeans$Treatment)
+```
+
+```{r}
+NCdevrate <- ggplot(data = NCdevratemeans, aes(x = Treatment, y = Dev.rate)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_line(group= 1) +
+  labs(x = "Mean Rearing Temperature", y = "Development Rate")
+
+NCdevrate
+  
+```
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/NCDevRateComb.png", NCdevrate, width = 8, height = 5)
+```
+
+
+##4. Pupal Comparisons
+
+
+ 
+```{r}
+pupalcomb[pupalcomb == "yes"] <- "Yes"
+pupalcomb <- subset(pupalcomb, Emerge.ok == "Yes")
+```
+
+```{r}
+pupalcomb$Dev.rate <- 1/pupalcomb$DaysPtoE
+```
+
+
+```{r}
+devratemeans <- summarySE(data = pupalcomb, 
+                               measurevar = "Dev.rate", 
+                               groupvars = c("Treatment", "Population"))
+
+devratemeans
+
+
+```
+
+
+
+```{r}
+CombPupalDevRate <- ggplot(data = devratemeans, aes(x = Treatment, y = Dev.rate, group = Population, linetype = Population, shape = Population, color = Population)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_line() +
+  labs(x = "Mean Rearing Temperature", y = "Development Rate", group = "Population", linetype = "Population", 
+       shape = "Population") +
+  scale_linetype_manual(values = c("solid", "dashed", "dotted")) + 
+  scale_shape_manual(values = c(19, 17, 5)) + 
+  scale_color_manual(values = c("#1E88E5", "orange", "lime green"))+ 
+  xlim(12, 35)+
+  geom_errorbar(aes(ymin = Dev.rate - se, ymax = Dev.rate + se), width = 0.3, linetype = "solid")
+
+CombPupalDevRate
+  
+```
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/PupalCombGraph.png", CombPupalDevRate, width = 8, height = 5)
+```
+

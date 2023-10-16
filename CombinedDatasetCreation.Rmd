@@ -9,9 +9,11 @@ date: "2023-08-15"
 ```{r}
 library(dplyr)
 library(lubridate)
+library(Rmisc)
+library(ggplot2)
 ```
 
-
+## Larval Data
 ```{r}
 NC1 <- read.csv("~/Desktop/GitHub/Pieris/North_Carolina/NC_Larval_and_Realistic_Temps/Data/CleanedRound1.csv", header = T)
 NC2 <- read.csv("~/Desktop/GitHub/Pieris/NCLarval2023.csv", header= T)
@@ -416,6 +418,7 @@ output <- rbind(output, CASum)
 write.csv(output, file = "~/Desktop/GitHub/Pieris/PopulationCombData.csv")
 ```
 
+
 ##4. Survival Analysis
 
 ###4a. NC1 
@@ -603,6 +606,11 @@ combsurvgraph <- ggplot(data = combsurv, aes(x = Mean.Temp, y = surv.perc, group
 
 combsurvgraph
 ```
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Survivallineplotcombined.png", combsurvgraph, width = 8, height = 5)
+```
+
+
 
 ```{r}
 combsurvbargraph <- ggplot(data = combsurv, aes(x= Mean.Temp, y= surv.perc, fill = Population)) + 
@@ -626,5 +634,73 @@ mod1<- lm(Age.pupa ~ Treatment * Population, data= output)
 summary(mod1)
 anova(mod1)
 ```
+
+
+
+
+##5. Creating a combined pupal datasheet
+```{r}
+NCPupal <- read.csv("~/Desktop/GitHub/Pieris/North_Carolina/NC Pupal/Data/NCPupal2023.csv" , header = T)
+CAPupal <- read.csv("~/Desktop/GitHub/Pieris/California/CAPupal/CAPupal2023.csv", header = T)
+CAPupal26 <- read.csv("~/Desktop/GitHub/Pieris/California/CAPupal/CAPupal26Deg.csv", header = T)
+WAPupal <- read.csv("~/Desktop/GitHub/Pieris/Washington/DataWA/WAPupa.csv", header = T)
+```
+
+```{r}
+WAPupal$Emerge.ok <- NA
+
+for (i in 1:length(WAPupal$Emerge.ok)){
+  if(is.na(WAPupal[i,19])== TRUE){
+    WAPupal[i,21] <- "No"
+  } else if(is.na(WAPupal[i,19])== FALSE){
+    WAPupal[i,21] <- "Yes"
+  }
+}
+```
+
+
+```{r}
+WAPupal$Pupate.ok <- NA
+
+for (i in 1:length(WAPupal$Pupate.ok)){
+  if(is.na(WAPupal[i,12])== TRUE){
+    WAPupal[i,22] <- "Yes"
+  } else if(is.na(WAPupal[i,12])== FALSE){
+    WAPupal[i,22] <- "No"
+  }
+}
+
+```
+
+
+```{r}
+NCPupal <- NCPupal %>% select(Treatment, DaysHtoP, DaysPtoE, Pupate.ok, Emerge.ok)
+NCPupal$Population <- "NC"
+CAPupal <- CAPupal %>% select(Treatment, DaysHtoP, DaysPtoE, Pupate.ok, Emerge.ok)
+CAPupal$Population <- "CA"
+CAPupal26 <- CAPupal26 %>% select(Treatment, DaysHtoP, DaysPtoE, Pupate.ok, Eclose.ok)
+CAPupal26$Population <- "CA"
+WAPupal <- WAPupal %>% select(Trt, DaysHtoP, DaysPtoE, Pupate.ok, Emerge.ok)
+WAPupal$Population <- "WA"
+```
+
+
+```{r}
+colnames(WAPupal)[1] = "Treatment"
+colnames(CAPupal26)[5] = "Emerge.ok"
+```
+
+```{r}
+PupalComb <- rbind(NCPupal, CAPupal)
+PupalComb <- rbind(PupalComb, CAPupal26)
+PupalComb <- rbind(PupalComb, WAPupal)
+```
+
+
+```{r}
+write.csv(PupalComb, file = "~/Desktop/GitHub/Pieris/PupalCombData.csv")
+```
+
+
 
 
