@@ -166,6 +166,10 @@ CAEggDevGraph
 
 ```
 ```{r}
+ggsave("~/Desktop/GitHub/Pieris/CAEggDevRate.png", CAEggDevGraph, width = 8, height = 5)
+```
+
+```{r}
 CombEggGradData <- rbind(DevEggCA, DevEgg)
 ```
 
@@ -285,17 +289,57 @@ AllNCEggDev
 ```
 
 ```{r}
-ggsave("~/Desktop/GitHub/Pieris/NCEggComp_Color1", All, width = 8, height = 5)
+ggsave("~/Desktop/GitHub/Pieris/NCEggComp_Color1.png", AllNCEggDev, width = 8, height = 5)
 ```
 
+Egg chamebr survival analysis
 
+```{r}
+EggChamSurv <- summarySE(data = NCEggCham, measurevar = "Dev.rate", groupvars = c("Avg_temp", "Block", "Hatch.Ok"))
 
+EggChamSurv
 
+EggChamSurv$Block <- as.factor(EggChamSurv$Block)
+EggChamSurv$Avg_temp <- as.factor(EggChamSurv$Avg_temp)
+EggChamSurv %>%
+  select(Avg_temp, Block, Hatch.Ok, N)
+```
 
+```{r}
+EggChamSurvData <- data.frame(Mean.Temp = c(16, 21, 26, 30, 34, 16, 21, 26, 30, 34), 
+                       surv.perc = 0,
+                       block = c("1","1","1","1","1","2","2","2","2","2"))
 
+EggChamSurvData[1, 2] <- EggChamSurv[2, 4] / (EggChamSurv[1, 4] + EggChamSurv[2, 4])
+EggChamSurvData[2, 2] <- EggChamSurv[6, 4] / (EggChamSurv[6, 4] + EggChamSurv[5, 4])
+EggChamSurvData[3, 2] <- EggChamSurv[10, 4] / (EggChamSurv[10, 4] + EggChamSurv[9, 4])
+EggChamSurvData[4, 2] <- EggChamSurv[14, 4] / (EggChamSurv[14, 4] + EggChamSurv[13, 4])
+EggChamSurvData[5, 2] <- 0
+EggChamSurvData[6, 2] <- EggChamSurv[4, 4] / (EggChamSurv[4, 4] + EggChamSurv[3, 4])
+EggChamSurvData[7, 2] <- EggChamSurv[8, 4] / (EggChamSurv[8, 4] + EggChamSurv[7, 4])
+EggChamSurvData[8, 2] <- EggChamSurv[12, 4] / (EggChamSurv[12, 4] + EggChamSurv[11, 4])
+EggChamSurvData[9, 2] <- EggChamSurv[16, 4] / (EggChamSurv[16, 4] + EggChamSurv[15, 4])
+EggChamSurvData[10, 2] <- EggChamSurv[19, 4] / (EggChamSurv[19, 4] + EggChamSurv[18, 4])
+                                                                            
 
+```
 
+```{r}
+eggchamsurvgraph <- ggplot(data = EggChamSurvData, aes(x = Mean.Temp, y = surv.perc, group = block, color = block, linetype = block)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_line(size = 1) + 
+  ylim(0, 1) + 
+  scale_color_manual(values = c("#1E88E5", "purple")) + 
+  scale_linetype_manual(values = c("solid", "dashed")) + 
+  labs(x = "Mean Rearing Temperature", y = "Proportion survival to hatching")
 
+eggchamsurvgraph
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/NCEggChamSurv.png", eggchamsurvgraph, width = 8, height = 5)
+```
 
 
 

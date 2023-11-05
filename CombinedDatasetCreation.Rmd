@@ -4,7 +4,18 @@ output: html_document
 date: "2023-08-15"
 ---
 
-## 0. Load packages and data
+
+0. Load packages and data
+1. Fill and create necessary columns for each population
+2. Select relevant columns
+3. Create output datasheet
+4. Creating larval survival graphs (should be moved to new datasheet)
+5. Random analyses
+6. Creating a pupal combined datasheet
+
+
+
+#0. Load packages and data
 
 ```{r}
 library(dplyr)
@@ -24,6 +35,7 @@ WA2wide <- read.csv("~/Desktop/GitHub/Pieris/Washington/DataWA/WABlock2Dev.csv",
 CA <- read.csv("~/Desktop/GitHub/Pieris/California/CALarval/CAPierisLarvalData.csv", header = T)
 ```
 
+#1. Fill and create necessary columns for each population
 ## Converting Mass.adult column from character to numeric
 ``` {r}
 CA$Mass.adult <- as.numeric(CA$Mass.adult)
@@ -340,8 +352,7 @@ for (i in 1:length(WA2wide$Prepupal.death.day)){
 WA2wide$Age.prepupal.death <- WA2wide$Prepupal.death.day - WA2wide$day.hatch
 ```
 
-
-## 2. Select the relevant columns
+#2. Select the relevant columns
 
 
 ```{r}
@@ -400,7 +411,7 @@ WA2merge$Expt <- "WA2"
 WA2merge$Population <- "WA"
 ```
 
-## 3. Combine and output
+#3. Combine and output
 
 ```{r}
 output <- rbind(NC1Sum, NC2Sum)
@@ -419,15 +430,16 @@ write.csv(output, file = "~/Desktop/GitHub/Pieris/PopulationCombData.csv")
 ```
 
 
-##4. Survival Analysis
+#4. Survival Analysis
 
-###4a. NC1 
+##4a. NC1 
 ```{r}
 NC1SurvSum <- summarySE(data = NC1, 
                          measurevar = "Mass.pupa", 
                          groupvars = c("Mean.Temp", "Surv.pupa"))
 NC1SurvSum
 ```
+
 ```{r}
 NC1SurvData <- data.frame(Mean.Temp = c(16, 21, 26, 30, 34), 
                        surv.perc = 0, 
@@ -438,7 +450,6 @@ NC1SurvData$Mean.Temp <- as.factor(NC1SurvData$Mean.Temp)
 NC1SurvData$Group = as.factor(NC1SurvData$Group)
 ```
 
-
 ```{r}
 NC1SurvData[1, 2] <- NC1SurvSum[2, 3] / (NC1SurvSum[2, 3] + NC1SurvSum[1, 3])
 NC1SurvData[2, 2] <- NC1SurvSum[4, 3] / (NC1SurvSum[4, 3] + NC1SurvSum[3, 3])
@@ -447,7 +458,7 @@ NC1SurvData[4, 2] <- NC1SurvSum[8, 3] / (NC1SurvSum[8, 3] + NC1SurvSum[7, 3])
 NC1SurvData[5, 2] <- NC1SurvSum[10, 3] / (NC1SurvSum[10, 3] + NC1SurvSum[9, 3])
 ```
 
-###4b. NC2 
+##4b. NC2 
 ```{r}
 NC2SurvSum <- summarySE(data = NC2, 
                          measurevar = "Mass.pupa", 
@@ -476,7 +487,7 @@ NC2SurvData[5, 2] <- NC2SurvSum[6, 3] / (NC2SurvSum[6, 3] + NC2SurvSum[5, 3])
 ```
 
 
-###4c. WA1
+##4c. WA1
 ```{r}
 WA1SurvSum <- summarySE(data = WA1, 
                          measurevar = "Mass.pupa", 
@@ -504,7 +515,7 @@ WA1SurvData[4, 2] <- WA1SurvSum[8, 3] / (WA1SurvSum[8, 3] + WA1SurvSum[7, 3])
 WA1SurvData[5, 2] <- WA1SurvSum[10, 3] / (WA1SurvSum[10, 3] + WA1SurvSum[9, 3])
 ```
 
-###4d. WA2
+##4d. WA2
 ```{r}
 WA2SurvSum <- summarySE(data = WA2, 
                          measurevar = "Mass.pupa", 
@@ -533,7 +544,7 @@ WA2SurvData[5, 2] <- WA2SurvSum[10, 3] / (WA2SurvSum[10, 3] + WA2SurvSum[9, 3])
 ```
 
 
-###4e. CA
+##4e. CA
 ```{r}
 CASurvSum <- summarySE(data = CA, 
                          measurevar = "Mass.pupa", 
@@ -560,7 +571,7 @@ CASurvData[5, 2] <- CASurvSum[10, 3] / (CASurvSum[10, 3] + CASurvSum[9, 3])
 ```
 
 
-###4f. Combine survival data for each population 
+##4f. Combine survival data for each population 
 
 ```{r}
 NCCombSurv <- merge(NC1SurvData, NC2SurvData, by = c("Mean.Temp","Population")) 
@@ -579,7 +590,7 @@ combsurv <-rbind(combsurv, CASurvData)
 
 ```
 
-#This doesn't work anymore after data changed
+This doesn't work anymore after data changed
 ```{r}
 combsurvlinegraph <- ggplot(data = combsurv, aes(x = Mean.Temp, y = surv.perc, group = Population, color = Population)) + 
   theme_bw() + 
@@ -626,7 +637,7 @@ ggsave("~/Desktop/GitHub/Pieris/Survivalbarcombined.png", combsurvbargraph, widt
 ```
 
 
-##5. Random Analysis
+#5. Random Analysis
 
 ```{r}
 mod1<- lm(Age.pupa ~ Treatment * Population, data= output)
@@ -638,7 +649,7 @@ anova(mod1)
 
 
 
-##5. Creating a combined pupal datasheet
+#6. Creating a combined pupal datasheet
 ```{r}
 NCPupal <- read.csv("~/Desktop/GitHub/Pieris/North_Carolina/NC Pupal/Data/NCPupal2023.csv" , header = T)
 CAPupal <- read.csv("~/Desktop/GitHub/Pieris/California/CAPupal/CAPupal2023.csv", header = T)
@@ -672,15 +683,60 @@ for (i in 1:length(WAPupal$Pupate.ok)){
 
 ```
 
+```{r}
+WAPupal$Surv.eclose <- NA
+
+for (i in 1:length(WAPupal$Mass.adult)){
+  if(is.na(WAPupal[i,16])== TRUE){
+    WAPupal[i,23] <- "No"
+  } else if(is.na(WAPupal[i,16])== FALSE){
+    WAPupal[i,23] <- "Yes"
+  }
+}
+```
 
 ```{r}
-NCPupal <- NCPupal %>% select(Treatment, DaysHtoP, DaysPtoE, Pupate.ok, Emerge.ok)
+for (i in 1:length(NCPupal$Mass.adult)){
+  if(is.na(NCPupal[i,19])== TRUE){
+    NCPupal[i,21] <- "No"
+  } else if(is.na(NCPupal[i,19])== FALSE){
+    NCPupal[i,21] <- "Yes"
+  }
+}
+```
+
+```{r}
+CAPupal$Surv.eclose <- NA
+
+for (i in 1:length(CAPupal$Mass.adult)){
+  if(is.na(CAPupal[i,14])== TRUE){
+    CAPupal[i,21] <- "No"
+  } else if(is.na(CAPupal[i,14])== FALSE){
+    CAPupal[i,21] <- "Yes"
+  }
+}
+```
+
+```{r}
+CAPupal26$Surv.eclose <- NA
+
+for (i in 1:length(CAPupal26$Mass.adult)){
+  if(is.na(CAPupal26[i,21])== TRUE){
+    CAPupal26[i,28] <- "No"
+  } else if(is.na(CAPupal26[i,21])== FALSE){
+    CAPupal26[i,28] <- "Yes"
+  }
+}
+```
+
+```{r}
+NCPupal <- NCPupal %>% select(Treatment, DaysHtoP, DaysPtoE, Pupate.ok, Emerge.ok, Mass.adult, Surv.eclose)
 NCPupal$Population <- "NC"
-CAPupal <- CAPupal %>% select(Treatment, DaysHtoP, DaysPtoE, Pupate.ok, Emerge.ok)
+CAPupal <- CAPupal %>% select(Treatment, DaysHtoP, DaysPtoE, Pupate.ok, Emerge.ok, Mass.adult, Surv.eclose)
 CAPupal$Population <- "CA"
-CAPupal26 <- CAPupal26 %>% select(Treatment, DaysHtoP, DaysPtoE, Pupate.ok, Eclose.ok)
+CAPupal26 <- CAPupal26 %>% select(Treatment, DaysHtoP, DaysPtoE, Pupate.ok, Eclose.ok, Mass.adult, Surv.eclose)
 CAPupal26$Population <- "CA"
-WAPupal <- WAPupal %>% select(Trt, DaysHtoP, DaysPtoE, Pupate.ok, Emerge.ok)
+WAPupal <- WAPupal %>% select(Trt, DaysHtoP, DaysPtoE, Pupate.ok, Emerge.ok, Mass.adult, Surv.eclose)
 WAPupal$Population <- "WA"
 ```
 

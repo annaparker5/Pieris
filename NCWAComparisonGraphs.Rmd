@@ -1,9 +1,15 @@
 ---
-title: "Comparing NC and WA data"
+title: "Comparing NC WA, and CA data"
 output: html_notebook
 ---
+0. load packages and data
+1. larval dev rate vs temp
+2. pupal mass vs temp
+3. surv to pupation vs temp
+4. north carolina blocked larval dev rate comparison
 
-## 0. Load packages and data
+
+# 0. Load packages and data
 
 ```{r}
 library(dplyr)
@@ -16,7 +22,7 @@ comb <- read.csv("~/Desktop/GitHub/Pieris/PopulationCombData.csv", header = TRUE
 ```
 
 
-## 1. larval dev rate vs. temp 
+# 1. larval dev rate vs. temp 
   - Include LPIs 
   
 ```{r}
@@ -58,7 +64,7 @@ ggsave("~/Desktop/GitHub/Pieris/NCWACAdevrate.png", NCWACAdevrate, width = 8, he
 
 
 
-## 2. Pupal mass vs. temp
+# 2. Pupal mass vs. temp
   - Exclude LPIs
   
 
@@ -96,7 +102,7 @@ ggsave("~/Desktop/GitHub/Pieris/NCWACAmass.png", NCWACAmass, width = 8, height =
 ```
 
 
-## 3. Surv to pupation vs. temp
+# 3. Surv to pupation vs. temp
   - Include LPIs
   
 
@@ -171,7 +177,7 @@ NCWACAsurv
 ggsave("~/Desktop/GitHub/Pieris/NCWACAsurv.png", NCWACAsurv, width = 8, height = 5)
 ```
 
-### 3A. Surv to Pupation vs Temp (by population instead of blocked)
+## 3A. Surv to Pupation vs Temp (by population instead of blocked)
   - Include LPIs
   
 
@@ -242,7 +248,7 @@ ggsave("~/Desktop/GitHub/Pieris/NCWACAsurv.png", NCWACAsurv, width = 8, height =
 ```
 
 
-North Carolina Experiment Comparisons
+#4.North Carolina Experiment Comparisons
 
 ```{r}
 NCComb <- comb[comb$Population == "NC", ]
