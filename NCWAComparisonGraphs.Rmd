@@ -19,6 +19,7 @@ library(Rmisc)
 
 ```{r}
 comb <- read.csv("~/Desktop/GitHub/Pieris/PopulationCombData.csv", header = TRUE)
+NC2 <- read.csv("~/Desktop/GitHub/Pieris/NCLarval2023.csv", header= T)
 ```
 
 
@@ -274,7 +275,40 @@ NCdevrate <- ggplot(data = NCdevratemeans, aes(x = Treatment, y = Dev.rate)) +
 NCdevrate
   
 ```
+
 ```{r}
 ggsave("~/Desktop/GitHub/Pieris/NCDevRateComb.png", NCdevrate, width = 8, height = 5)
 ```
+
+#5. Statistical Analyses
+
+```{r}
+popcomb <- lm(Dev.rate ~ Treatment*Population, data = comb)
+
+summary(popcomb)
+anova(popcomb)
+```
+```{r}
+comb$Expt = as.factor(comb$Expt)
+ncblock <- lm(Dev.rate ~ Treatment*Expt, data = comb[comb$Population == "NC", ])
+
+summary(ncblock)
+anova(ncblock)
+```
+
+```{r}
+nc2sib <- lm(Time.pupa ~ Mean.temp*Sib, data = NC2[is.na(NC2$Time.pupa) == FALSE, ])
+
+summary(nc2sib)
+anova(nc2sib)
+```
+
+```{r}
+nc2hatchloc <- lm(Time.pupa ~ Mean.temp*Hatch.loc, data = NC2[is.na(NC2$Time.pupa) == FALSE, ])
+
+summary(nc2hatchloc)
+anova(nc2hatchloc)
+```
+
+
 

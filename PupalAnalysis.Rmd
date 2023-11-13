@@ -1,0 +1,167 @@
+---
+title: "PupalPopulationComparisons"
+output: html_document
+date: "2023-11-03"
+---
+
+#0.Load packages and data
+```{r}
+library(dplyr)
+library(tidyr)
+library(janitor)
+library(ggplot2)
+library(survival)
+library(survminer)
+library(AICcmodavg)
+```
+
+```{r}
+pupal <- read.csv("~/Desktop/GitHub/Pieris/PupalCombData.csv", header = TRUE)
+CAPupal <- read.csv("~/Desktop/GitHub/Pieris/California/CAPupal/CAPupal2023.csv", header = T)
+NCPupal <- read.csv("~/Desktop/GitHub/Pieris/North_Carolina/NC Pupal/Data/NCPupal2023.csv" , header = T)
+WAPupal <- read.csv("~/Desktop/GitHub/Pieris/Washington/DataWA/WAPupa.csv", header = T)
+```
+
+
+#1.Percent surv to eclosion
+```{r}
+PupalSurvSum <- summarySE(data = pupal, 
+                         measurevar = "Mass.adult", 
+                         groupvars = c("Treatment", "Surv.eclose", "Population"))
+PupalSurvSum
+```
+
+```{r}
+PupalSurvData <- data.frame(Mean.Temp = c(16, 21, 26, 30, 34, 16, 21, 26, 30, 34, 16, 21, 26, 30, 34), 
+                       surv.perc = 0, 
+                       Population = c("CA","CA","CA","CA","CA","NC","NC","NC","NC","NC","WA","WA","WA","WA","WA")
+                       )
+
+PupalSurvData$Mean.Temp <- as.factor(PupalSurvData$Mean.Temp)
+```
+
+```{r}
+PupalSurvData[1, 2] <- PupalSurvSum[4, 4] / (PupalSurvSum[4, 4] + PupalSurvSum[1, 4])
+PupalSurvData[2, 2] <- PupalSurvSum[10, 4] / (PupalSurvSum[10, 4] + PupalSurvSum[7, 4])
+PupalSurvData[3, 2] <- PupalSurvSum[16, 4] / (PupalSurvSum[16, 4] + PupalSurvSum[13, 4])
+PupalSurvData[4, 2] <- PupalSurvSum[22, 4] / (PupalSurvSum[22, 4] + PupalSurvSum[19, 4])
+PupalSurvData[5, 2] <- PupalSurvSum[28, 4] / (PupalSurvSum[28, 4] + PupalSurvSum[25, 4])
+PupalSurvData[6, 2] <- PupalSurvSum[5,4] / (PupalSurvSum[5, 4] + PupalSurvSum[2, 4])
+PupalSurvData[7, 2] <- PupalSurvSum[11,4] / (PupalSurvSum[11, 4] + PupalSurvSum[8, 4])
+PupalSurvData[8, 2] <- PupalSurvSum[17,4] / (PupalSurvSum[17, 4] + PupalSurvSum[14, 4])
+PupalSurvData[9, 2] <- PupalSurvSum[23,4] / (PupalSurvSum[23, 4] + PupalSurvSum[20, 4])
+PupalSurvData[10, 2] <- PupalSurvSum[29,4] / (PupalSurvSum[29, 4] + PupalSurvSum[26, 4])
+PupalSurvData[11, 2] <- PupalSurvSum[6,4] / (PupalSurvSum[6, 4] + PupalSurvSum[3, 4])
+PupalSurvData[12, 2] <- PupalSurvSum[12,4] / (PupalSurvSum[12, 4] + PupalSurvSum[9, 4])
+PupalSurvData[13, 2] <- PupalSurvSum[18,4] / (PupalSurvSum[18, 4] + PupalSurvSum[15, 4])
+PupalSurvData[14, 2] <- PupalSurvSum[24,4] / (PupalSurvSum[24, 4] + PupalSurvSum[21, 4])
+PupalSurvData[15, 2] <- PupalSurvSum[30,4] / (PupalSurvSum[30, 4] + PupalSurvSum[27, 4])
+```
+
+
+```{r}
+pupalsurvgraph <- ggplot(data = PupalSurvData, aes(x = Mean.Temp, y = surv.perc, group = Population, color = Population, shape = Population, linetype = Population)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_line(size = 1) + 
+  ylim(0, 1) + 
+  scale_color_manual(values = c("#1E88E5", "orange", "lime green")) + 
+  scale_linetype_manual(values = c("solid", "dashed", "dotted")) + 
+  scale_shape_manual(values = c(19, 17, 15)) + 
+  labs(x = "Mean Rearing Temperature", y = "Proportion survival to eclosion")
+
+pupalsurvgraph
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/PupalSurvGraph.png", pupalsurvgraph, width = 8, height = 5)
+```
+
+#2. Adult mass vs temperature
+
+
+```{r}
+pupalmassmeans <- summarySE(data = pupal[!is.na(pupal$Mass.adult), ], 
+                               measurevar = "Mass.adult", 
+                               groupvars = c("Treatment", "Population"))
+
+pupalmassmeans
+
+pupalmassmeans$Treatment <- as.factor(pupalmassmeans$Treatment)
+```
+
+```{r}
+pupalmassgraph <- ggplot(data = pupalmassmeans, aes(x = Treatment, y = Mass.adult, group = Population, linetype = Population, shape = Population, color = Population)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_line(size = 1) +
+  labs(x = "Mean Rearing Temperature", y = "Adult Mass (mg)", group = "Population", linetype = "Population", 
+       shape = "Population") +
+  scale_linetype_manual(values = c("solid", "dashed", "dotted")) + 
+  scale_shape_manual(values = c(19, 17, 15)) + 
+  scale_color_manual(values = c("#1E88E5", "orange", "lime green"))+
+  geom_errorbar(aes(ymin = Mass.adult - se, ymax = Mass.adult + se), width = 0.3, linetype = "solid")
+
+pupalmassgraph
+  
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/PupalMassGraph.png", pupalmassgraph, width = 8, height = 5)
+```
+
+
+#3. Statistical comparisons
+
+```{r}
+cablocks <- lm(DaysPtoE ~ Block+Treatment, data = CAPupal[is.na(CAPupal$DaysPtoE) == FALSE, ])
+
+summary(cablocks)
+anova(cablocks)
+```
+```{r}
+catemp <- lm(DaysPtoE ~ Treatment, data = CAPupal[is.na(CAPupal$DaysPtoE) == FALSE, ])
+
+summary(catemp)
+anova(catemp)
+```
+```{r}
+NCPupal$Sib.Group <- as.factor(NCPupal$Sib.Group)
+ncsib <- lm(DaysPtoE ~ Sib.Group*Treatment, data = NCPupal[is.na(NCPupal$DaysPtoE) == FALSE, ])
+
+summary(ncsib)
+anova(ncsib)
+```
+```{r}
+ncloc <- lm(DaysPtoE ~ Location*Treatment, data = NCPupal[is.na(NCPupal$DaysPtoE) == FALSE, ])
+
+summary(ncloc)
+anova(ncloc)
+```
+```{r}
+nchatchon <- lm(DaysPtoE ~ Hatched.on*Treatment, data = NCPupal[is.na(NCPupal$DaysPtoE) == FALSE, ])
+
+summary(nchatchon)
+anova(nchatchon)
+```
+```{r}
+nctemp <- lm(DaysPtoE ~ Treatment, data = NCPupal[is.na(NCPupal$DaysPtoE) == FALSE, ])
+
+summary(nctemp)
+anova(nctemp)
+```
+```{r}
+Poptemp <- lm(DaysPtoE ~ Treatment+Population, data = pupal[is.na(pupal$DaysPtoE) == FALSE, ])
+
+summary(Poptemp)
+anova(Poptemp)
+```
+
+```{r}
+watemp <- lm(DaysPtoE ~ Trt, data = WAPupal[is.na(WAPupal$DaysPtoE) == FALSE, ])
+
+summary(watemp)
+anova(watemp)
+```
+
+
