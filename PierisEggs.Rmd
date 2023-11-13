@@ -342,4 +342,23 @@ ggsave("~/Desktop/GitHub/Pieris/NCEggChamSurv.png", eggchamsurvgraph, width = 8,
 ```
 
 
+#Linear modeling statistics
+
+```{r}
+eggpop <- lm(Dev.rate ~ Avg_temp*Population, data = CombEggGradData)
+
+summary(eggpop)
+anova(eggpop)
+```
+
+
+
+
+
+
+
+
+
+
+
 
