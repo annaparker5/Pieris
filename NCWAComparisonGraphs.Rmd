@@ -44,23 +44,23 @@ devratemeans$Treatment <- as.factor(devratemeans$Treatment)
 
 
 ```{r}
-NCWACAdevrate <- ggplot(data = devratemeans, aes(x = Treatment, y = Dev.rate, group = Population, linetype = Population, 
-                                       shape = Population)) + 
+NCWACAdevrate <- ggplot(data = devratemeans, aes(x = Treatment, y = Dev.rate, group = Population, linetype = Population, shape = Population, color = Population)) + 
   theme_bw() + 
   geom_point(size = 3) + 
-  geom_line() +
+  geom_line(size = 1) +
   labs(x = "Mean Rearing Temperature", y = "Development Rate", group = "Population", linetype = "Population", 
        shape = "Population") +
   scale_linetype_manual(values = c("solid", "dashed", "dotted")) + 
-  scale_shape_manual(values = c(19, 2, 5)) + 
-  geom_errorbar(aes(ymin = Dev.rate - se, ymax = Dev.rate + se), width = 0.3, linetype = "solid")
+  scale_shape_manual(values = c(19, 17, 15)) + 
+  geom_errorbar(aes(ymin = Dev.rate - se, ymax = Dev.rate + se), width = 0.3, linetype = "solid") + 
+  scale_color_manual(values = c("#1E88E5", "orange", "lime green"))
 
 NCWACAdevrate
   
 ```
 
 ```{r}
-ggsave("~/Desktop/GitHub/Pieris/NCWACAdevrate.png", NCWACAdevrate, width = 8, height = 5)
+ggsave("~/Desktop/GitHub/Pieris/NCWACAcolordevrate.png", NCWACAdevrate, width = 8, height = 5)
 ```
 
 
@@ -82,16 +82,16 @@ massmeans$Treatment <- as.factor(massmeans$Treatment)
 
 
 ```{r}
-NCWACAmass <- ggplot(data = massmeans, aes(x = Treatment, y = Mass.pupa, group = Population, linetype = Population, 
-                                       shape = Population)) + 
+NCWACAmass <- ggplot(data = massmeans, aes(x = Treatment, y = Mass.pupa, group = Population, linetype = Population, shape = Population, color = Population)) + 
   theme_bw() + 
   geom_point(size = 3) + 
-  geom_line() +
-  labs(x = "Mean Rearing Temperature", y = "Pupal Mass", group = "Population", linetype = "Population", 
+  geom_line(size = 1) +
+  labs(x = "Mean Rearing Temperature", y = "Pupal Mass (mg)", group = "Population", linetype = "Population", 
        shape = "Population") +
   scale_linetype_manual(values = c("solid", "dashed", "dotted")) + 
-  scale_shape_manual(values = c(19, 2, 5)) + 
-  geom_errorbar(aes(ymin = Mass.pupa - se, ymax = Mass.pupa + se), width = 0.3, linetype = "solid")
+  scale_shape_manual(values = c(19, 17, 15)) + 
+  geom_errorbar(aes(ymin = Mass.pupa - se, ymax = Mass.pupa + se), width = 0.3, linetype = "solid") +
+  scale_color_manual(values= c("#1E88E5", "orange", "lime green"))
 
 NCWACAmass
   
@@ -228,15 +228,14 @@ survdata[15, 2] <- survpercsum[26, 4] / (survpercsum[26, 4] + survpercsum[25, 4]
 
 
 ```{r}
-NCWACAsurv <- ggplot(data = survdata, aes(x = Treatment, y = surv.perc, group = Population, linetype = Population, 
-                                       shape = Population)) + 
+NCWACAsurv <- ggplot(data = survdata, aes(x = Treatment, y = surv.perc, group = Population, linetype = Population, shape = Population, color = Population)) + 
   theme_bw() + 
   geom_point(size = 3) + 
-  geom_line() +
-  labs(x = "Mean Rearing Temperature", y = "Proportion surviving to pupation", group = "Population", linetype = "Population", 
-       shape = "Population") +
+  geom_line(size = 1) +
+  labs(x = "Mean Rearing Temperature", y = "Proportion surviving to pupation", group = "Population", linetype = "Population", shape = "Population") +
   scale_linetype_manual(values = c("solid", "dashed", "dotted")) + 
-  scale_shape_manual(values = c(19, 2, 5))
+  scale_shape_manual(values = c(19, 17, 15)) +
+  scale_color_manual(values = c("#1E88E5", "orange", "lime green"))
 
 NCWACAsurv
   
@@ -248,12 +247,50 @@ NCWACAsurv
 ggsave("~/Desktop/GitHub/Pieris/NCWACAsurv.png", NCWACAsurv, width = 8, height = 5)
 ```
 
+##3B. Time of death versus rearing temperature
+
+```{r}
+TODmeans <- summarySE(data = comb[!is.na(comb$Age.death), ], 
+                               measurevar = "Age.death", 
+                               groupvars = c("Treatment", "Population"))
+
+TODmeans
+
+TODmeans$Treatment <- as.factor(TODmeans$Treatment)
+TODmeans$Size <- TODmeans$N/10
+```
+
+```{r}
+CombTOD <- ggplot(data = TODmeans, aes(x = Treatment, y = Age.death, group = Population, linetype = Population, shape = Population, color = Population)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_line(size = 1) +
+  labs(x = "Temperature Treatment", y = "Average time to death (Days)", group = "Population", linetype = "Population", 
+       shape = "Population")+ 
+  scale_linetype_manual(values = c("solid", "dashed", "dotted")) + 
+  scale_shape_manual(values = c(19, 17, 15))+
+  scale_color_manual(values = c("#1E88E5", "orange", "lime green"))+
+  geom_errorbar(aes(ymin = Age.death - se, ymax = Age.death + se), width = 0.3, linetype = "solid")
+
+CombTOD
+  
+```
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/NCWACAtimedeath.png", CombTOD, width = 8, height = 5)
+```
+
+
 
 #4.North Carolina Experiment Comparisons
 
 ```{r}
 NCComb <- comb[comb$Population == "NC", ]
 ```
+
+```{r}
+write.csv(NCComb, file = "~/Desktop/GitHub/Pieris/NCLarvalCombData.csv")
+```
+
 
 ```{r}
 NCdevratemeans <- summarySE(data = NCComb[NCComb$Surv.pupa == "Y", ], 
@@ -283,7 +320,7 @@ ggsave("~/Desktop/GitHub/Pieris/NCDevRateComb.png", NCdevrate, width = 8, height
 #5. Statistical Analyses
 
 ```{r}
-popcomb <- lm(Dev.rate ~ Treatment*Population, data = comb)
+popcomb <- lm(Dev.rate ~ Treatment*Population, data = comb[is.na(comb$Dev.rate) == FALSE, ])
 
 summary(popcomb)
 anova(popcomb)

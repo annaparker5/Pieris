@@ -237,7 +237,7 @@ colnames(NCEggCham)[3]<- "Avg_temp"
 
 ```{r}
 EggChamSum <- summarySE(data = NCEggCham[NCEggCham$Hatch.Ok == "Yes", ], measurevar = "Dev.rate", groupvars = c("Avg_temp", "Block"))
-
+EggChamSum[nrow(EggChamSum)+1, ] <- list(34, 1, 1, 0, 0, 0, 0)
 EggChamSum
 
 EggChamSum$Block <- as.factor(EggChamSum$Block)
@@ -256,13 +256,28 @@ EggChamDevGraph <- ggplot(data = EggChamSum, aes(x = Avg_temp, y = Dev.rate, gro
   labs(x = "Average Temperature", y = "Development Rate (1/days to hatch)")
 
 EggChamDevGraph
-
 ```
 
 ```{r}
 ggsave("~/Desktop/GitHub/Pieris/NCChamberEggDevRate.png", EggChamDevGraph, width = 8, height = 5)
 ```
 
+```{r}
+Eggchamdev <- ggplot(data = EggChamSum, aes(x = Avg_temp, y = Dev.rate, group = Block, linetype = Block, color = Block)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_line(size = 1) +
+  labs(x = "Mean Temperature", y = "Development Rate (1/days)", group = "Block", linetype = "Block", 
+       shape = "Block") +
+  scale_linetype_manual(values = c("solid", "dashed")) + 
+  scale_color_manual(values = c("#1E88E5", "#ED68DD"))+
+  geom_errorbar(aes(ymin = Dev.rate - se, ymax = Dev.rate + se), width = 0.3, linetype = "solid")
+
+Eggchamdev
+```
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/NCChamberEggDevRate.png", Eggchamdev, width = 8, height = 5)
+```
 
 
 #4. Combining Egg Chamber and Egg Gradient for NC

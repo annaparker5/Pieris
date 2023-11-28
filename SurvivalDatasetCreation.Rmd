@@ -21,7 +21,7 @@ library(lubridate)
 ## 0. Load in the data
 
 ```{r}
-NC <- read.csv("~/Desktop/GitHub/Pieris/North Carolina/Data/CleanedRound1.csv", header = T)
+NC <- read.csv("~/Desktop/GitHub/Pieris/North_Carolina/NC_Larval_and_Realistic_Temps/Data/CleanedRound1.csv", header = T)
 WA1 <- read.csv("~/Desktop/GitHub/Pieris/Washington/DataWA/CleanedBlock1.csv", header = T)
 WA1wide <- read.csv("~/Desktop/GitHub/Pieris/Washington/DataWA/WABlock1Dev.csv", header = T)
 WA2 <- read.csv("~/Desktop/GitHub/Pieris/Washington/DataWA/CleanedBlock2.csv", header = T)

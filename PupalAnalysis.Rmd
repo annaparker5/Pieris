@@ -13,6 +13,8 @@ library(ggplot2)
 library(survival)
 library(survminer)
 library(AICcmodavg)
+library(Rmisc)
+library(cowplot)
 ```
 
 ```{r}
@@ -20,6 +22,8 @@ pupal <- read.csv("~/Desktop/GitHub/Pieris/PupalCombData.csv", header = TRUE)
 CAPupal <- read.csv("~/Desktop/GitHub/Pieris/California/CAPupal/CAPupal2023.csv", header = T)
 NCPupal <- read.csv("~/Desktop/GitHub/Pieris/North_Carolina/NC Pupal/Data/NCPupal2023.csv" , header = T)
 WAPupal <- read.csv("~/Desktop/GitHub/Pieris/Washington/DataWA/WAPupa.csv", header = T)
+larval <- read.csv("~/Desktop/Github/Pieris/LarvalCombPupal.csv", header = TRUE)
+
 ```
 
 
@@ -32,9 +36,9 @@ PupalSurvSum
 ```
 
 ```{r}
-PupalSurvData <- data.frame(Mean.Temp = c(16, 21, 26, 30, 34, 16, 21, 26, 30, 34, 16, 21, 26, 30, 34), 
+PupalSurvData <- data.frame(Mean.Temp = c(16, 21, 30, 34, 16, 21, 26, 30, 34, 16, 21, 26, 30, 34), 
                        surv.perc = 0, 
-                       Population = c("CA","CA","CA","CA","CA","NC","NC","NC","NC","NC","WA","WA","WA","WA","WA")
+                       Population = c("CA","CA","CA","CA","NC","NC","NC","NC","NC","WA","WA","WA","WA","WA")
                        )
 
 PupalSurvData$Mean.Temp <- as.factor(PupalSurvData$Mean.Temp)
@@ -43,19 +47,18 @@ PupalSurvData$Mean.Temp <- as.factor(PupalSurvData$Mean.Temp)
 ```{r}
 PupalSurvData[1, 2] <- PupalSurvSum[4, 4] / (PupalSurvSum[4, 4] + PupalSurvSum[1, 4])
 PupalSurvData[2, 2] <- PupalSurvSum[10, 4] / (PupalSurvSum[10, 4] + PupalSurvSum[7, 4])
-PupalSurvData[3, 2] <- PupalSurvSum[16, 4] / (PupalSurvSum[16, 4] + PupalSurvSum[13, 4])
-PupalSurvData[4, 2] <- PupalSurvSum[22, 4] / (PupalSurvSum[22, 4] + PupalSurvSum[19, 4])
-PupalSurvData[5, 2] <- PupalSurvSum[28, 4] / (PupalSurvSum[28, 4] + PupalSurvSum[25, 4])
-PupalSurvData[6, 2] <- PupalSurvSum[5,4] / (PupalSurvSum[5, 4] + PupalSurvSum[2, 4])
-PupalSurvData[7, 2] <- PupalSurvSum[11,4] / (PupalSurvSum[11, 4] + PupalSurvSum[8, 4])
-PupalSurvData[8, 2] <- PupalSurvSum[17,4] / (PupalSurvSum[17, 4] + PupalSurvSum[14, 4])
-PupalSurvData[9, 2] <- PupalSurvSum[23,4] / (PupalSurvSum[23, 4] + PupalSurvSum[20, 4])
-PupalSurvData[10, 2] <- PupalSurvSum[29,4] / (PupalSurvSum[29, 4] + PupalSurvSum[26, 4])
-PupalSurvData[11, 2] <- PupalSurvSum[6,4] / (PupalSurvSum[6, 4] + PupalSurvSum[3, 4])
-PupalSurvData[12, 2] <- PupalSurvSum[12,4] / (PupalSurvSum[12, 4] + PupalSurvSum[9, 4])
-PupalSurvData[13, 2] <- PupalSurvSum[18,4] / (PupalSurvSum[18, 4] + PupalSurvSum[15, 4])
-PupalSurvData[14, 2] <- PupalSurvSum[24,4] / (PupalSurvSum[24, 4] + PupalSurvSum[21, 4])
-PupalSurvData[15, 2] <- PupalSurvSum[30,4] / (PupalSurvSum[30, 4] + PupalSurvSum[27, 4])
+PupalSurvData[3, 2] <- PupalSurvSum[20, 4] / (PupalSurvSum[20, 4] + PupalSurvSum[17, 4])
+PupalSurvData[4, 2] <- PupalSurvSum[26, 4] / (PupalSurvSum[26, 4] + PupalSurvSum[23, 4])
+PupalSurvData[5, 2] <- PupalSurvSum[5, 4] / (PupalSurvSum[5, 4] + PupalSurvSum[2, 4])
+PupalSurvData[6, 2] <- PupalSurvSum[11,4] / (PupalSurvSum[11, 4] + PupalSurvSum[8, 4])
+PupalSurvData[7, 2] <- PupalSurvSum[15,4] / (PupalSurvSum[15, 4] + PupalSurvSum[13, 4])
+PupalSurvData[8, 2] <- PupalSurvSum[21,4] / (PupalSurvSum[21, 4] + PupalSurvSum[18, 4])
+PupalSurvData[9, 2] <- PupalSurvSum[27,4] / (PupalSurvSum[27, 4] + PupalSurvSum[24, 4])
+PupalSurvData[10, 2] <- PupalSurvSum[6,4] / (PupalSurvSum[6, 4] + PupalSurvSum[3, 4])
+PupalSurvData[11, 2] <- PupalSurvSum[12,4] / (PupalSurvSum[12, 4] + PupalSurvSum[9, 4])
+PupalSurvData[12, 2] <- PupalSurvSum[16,4] / (PupalSurvSum[16, 4] + PupalSurvSum[14, 4])
+PupalSurvData[13, 2] <- PupalSurvSum[22,4] / (PupalSurvSum[22, 4] + PupalSurvSum[19, 4])
+PupalSurvData[14, 2] <- PupalSurvSum[28,4] / (PupalSurvSum[28, 4] + PupalSurvSum[25, 4])
 ```
 
 
@@ -68,7 +71,7 @@ pupalsurvgraph <- ggplot(data = PupalSurvData, aes(x = Mean.Temp, y = surv.perc,
   scale_color_manual(values = c("#1E88E5", "orange", "lime green")) + 
   scale_linetype_manual(values = c("solid", "dashed", "dotted")) + 
   scale_shape_manual(values = c(19, 17, 15)) + 
-  labs(x = "Mean Rearing Temperature", y = "Proportion survival to eclosion")
+  labs(x = "Mean Pupal Temperature", y = "Proportion survival to eclosion")
 
 pupalsurvgraph
 ```
@@ -76,6 +79,8 @@ pupalsurvgraph
 ```{r}
 ggsave("~/Desktop/GitHub/Pieris/PupalSurvGraph.png", pupalsurvgraph, width = 8, height = 5)
 ```
+
+
 
 #2. Adult mass vs temperature
 
@@ -95,7 +100,7 @@ pupalmassgraph <- ggplot(data = pupalmassmeans, aes(x = Treatment, y = Mass.adul
   theme_bw() + 
   geom_point(size = 3) + 
   geom_line(size = 1) +
-  labs(x = "Mean Rearing Temperature", y = "Adult Mass (mg)", group = "Population", linetype = "Population", 
+  labs(x = "Mean Pupal Temperature", y = "Adult Mass (mg)", group = "Population", linetype = "Population", 
        shape = "Population") +
   scale_linetype_manual(values = c("solid", "dashed", "dotted")) + 
   scale_shape_manual(values = c(19, 17, 15)) + 
@@ -103,7 +108,6 @@ pupalmassgraph <- ggplot(data = pupalmassmeans, aes(x = Treatment, y = Mass.adul
   geom_errorbar(aes(ymin = Mass.adult - se, ymax = Mass.adult + se), width = 0.3, linetype = "solid")
 
 pupalmassgraph
-  
 ```
 
 ```{r}
@@ -111,7 +115,160 @@ ggsave("~/Desktop/GitHub/Pieris/PupalMassGraph.png", pupalmassgraph, width = 8, 
 ```
 
 
-#3. Statistical comparisons
+
+#5. Comparison between pupal and pupal part of larval experiments
+
+```{r}
+pupal$Dev.rate <- 1/pupal$DaysPtoE
+pupdev <- summarySE(data = pupal[pupal$Surv.eclose== "Yes" & pupal$DaysPtoE >0, ], 
+                         measurevar = "Dev.rate", 
+                         groupvars = c("Treatment", "Population"))
+
+pupdev <- pupdev %>% select(Treatment, Population, N, Dev.rate, se)
+pupdev <-pupdev[1:14, ]
+```
+
+```{r}
+larval$Dev.rate <- 1/larval$DaysPtoE
+larvpupdev <- summarySE(data = larval[!is.na(larval$Dev.rate), ], 
+                         measurevar = "Dev.rate", 
+                         groupvars = c("Treatment", "Population"))
+
+larvpupdev <- larvpupdev %>% select(Treatment, Population, N, Dev.rate, se)
+larvpupdev
+```
+
+
+```{r}
+devgraph <- ggplot(data = pupdev, aes(x = Treatment, y = Dev.rate, group = Population, linetype = Population, shape = Population, color = Population, ymax=.18)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_line(size = 1) +
+  labs(x = "Mean Pupal Temperature", y = "Development Rate (1/days)", group = "Population", linetype = "Population", 
+       shape = "Population") +
+  scale_linetype_manual(values = c("solid", "dashed", "dotted")) + 
+  scale_shape_manual(values = c(19, 17, 15)) + 
+  scale_color_manual(values = c("#1E88E5", "orange", "lime green"))+
+  geom_errorbar(aes(ymin = Dev.rate - se, ymax = Dev.rate + se), width = 0.3, linetype = "solid")
+
+devgraph
+  
+```
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Pupaldevgraph.png", devgraph, width = 8, height = 5)
+```
+
+
+```{r}
+larvdevgraph <- ggplot(data = larvpupdev, aes(x = Treatment, y = Dev.rate, group = Population, linetype = Population, shape = Population, color = Population, ymax= .18)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_line(size = 1) +
+  labs(x = "Mean Rearing Temperature", y = "Development Rate (1/days)") +
+  scale_linetype_manual(values = c("solid", "dashed", "dotted")) + 
+  scale_shape_manual(values = c(19, 17, 15)) + 
+  scale_color_manual(values = c("#1E88E5", "orange", "lime green"))+
+  geom_errorbar(aes(ymin = Dev.rate - se, ymax = Dev.rate + se), width = 0.3, linetype = "solid")
+  
+
+larvdevgraph
+  
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Larvalpupdevgraph.png", larvdevgraph, width = 8, height = 5)
+```
+
+```{r}
+puplarvgraph <- plot_grid(larvdevgraph,devgraph)
+puplarvgraph
+```
+##survival comparison
+```{r}
+larvalsurvsum <- summarySE(data = larval, 
+                         measurevar = "Mass.adult", 
+                         groupvars = c("Treatment", "Surv.eclose", "Population"))
+larvalsurvsum
+```
+
+```{r}
+LarvalSurvData <- data.frame(Mean.Temp = c(16, 21, 26, 30, 34, 16, 21, 26, 30, 34, 16, 21, 26, 30, 34), 
+                       surv.perc = 0, 
+                       Population = c("CA","CA","CA","CA","CA","NC","NC","NC","NC","NC","WA","WA","WA","WA","WA")
+                       )
+
+LarvalSurvData$Mean.Temp <- as.factor(LarvalSurvData$Mean.Temp)
+```
+
+```{r}
+LarvalSurvData[1, 2] <- larvalsurvsum[4, 4] / (larvalsurvsum[4, 4] + larvalsurvsum[1, 4])
+LarvalSurvData[2, 2] <- larvalsurvsum[9, 4] / (larvalsurvsum[9, 4] + larvalsurvsum[7, 4])
+LarvalSurvData[3, 2] <- larvalsurvsum[15, 4] / (larvalsurvsum[15, 4] + larvalsurvsum[12, 4])
+LarvalSurvData[4, 2] <- larvalsurvsum[21, 4] / (larvalsurvsum[21, 4] + larvalsurvsum[18, 4])
+LarvalSurvData[5, 2] <- larvalsurvsum[26, 4] / (larvalsurvsum[26, 4] + larvalsurvsum[24, 4])
+LarvalSurvData[6, 2] <- larvalsurvsum[5,4] / (larvalsurvsum[5, 4] + larvalsurvsum[2, 4])
+LarvalSurvData[7, 2] <- larvalsurvsum[10,4] / (larvalsurvsum[10, 4] + larvalsurvsum[7, 4])
+LarvalSurvData[8, 2] <- larvalsurvsum[16,4] / (larvalsurvsum[16, 4] + larvalsurvsum[13, 4])
+LarvalSurvData[9, 2] <- larvalsurvsum[22,4] / (larvalsurvsum[22, 4] + larvalsurvsum[19, 4])
+LarvalSurvData[10, 2] <- larvalsurvsum[27,4] / (larvalsurvsum[27, 4] + larvalsurvsum[25, 4])
+LarvalSurvData[11, 2] <- 0 / larvalsurvsum[3, 4]
+LarvalSurvData[12, 2] <- larvalsurvsum[11,4] / (larvalsurvsum[11, 4] + larvalsurvsum[8, 4])
+LarvalSurvData[13, 2] <- larvalsurvsum[17,4] / (larvalsurvsum[17, 4] + larvalsurvsum[14, 4])
+LarvalSurvData[14, 2] <- larvalsurvsum[23,4] / (larvalsurvsum[23, 4] + larvalsurvsum[20, 4])
+LarvalSurvData[15, 2] <- larvalsurvsum[28,4] / larvalsurvsum[28, 4]
+```
+
+
+```{r}
+larvalsurvgraph <- ggplot(data = LarvalSurvData, aes(x = Mean.Temp, y = surv.perc, group = Population, color = Population, shape = Population, linetype = Population)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_line(size = 1) + 
+  ylim(0, 1) + 
+  scale_color_manual(values = c("#1E88E5", "orange", "lime green")) + 
+  scale_linetype_manual(values = c("solid", "dashed", "dotted")) + 
+  scale_shape_manual(values = c(19, 17, 15)) + 
+  labs(x = "Mean Rearing Temperature", y = "Proportion survival to eclosion")
+
+larvalsurvgraph
+```
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Larvalpupsurvgraph.png", larvalsurvgraph, width = 8, height = 5)
+```
+
+
+```{r}
+larval$Mass.adult<- as.numeric(larval$Mass.adult)
+larvpupmass <- summarySE(data = larval[!is.na(larval$Mass.adult), ], 
+                         measurevar = "Mass.adult", 
+                         groupvars = c("Treatment", "Population"))
+
+larvpupmass <- larvpupmass %>% select(Treatment, Population, N, Mass.adult, se)
+larvpupmass
+```
+
+
+```{r}
+larvpupmassgraph <- ggplot(data = larvpupmass, aes(x = Treatment, y = Mass.adult, group = Population, linetype = Population, shape = Population, color = Population)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_line(size = 1) +
+  labs(x = "Mean Rearing Temperature", y = "Adult Mass (mg)", group = "Population", linetype = "Population", 
+       shape = "Population") +
+  scale_linetype_manual(values = c("solid", "dashed", "dotted")) + 
+  scale_shape_manual(values = c(19, 17, 15)) + 
+  scale_color_manual(values = c("#1E88E5", "orange", "lime green"))+
+  geom_errorbar(aes(ymin = Mass.adult - se, ymax = Mass.adult + se), width = 0.3, linetype = "solid")
+
+larvpupmassgraph
+```
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/LarvalAdultMassGraph.png", larvpupmassgraph, width = 8, height = 5)
+```
+
+
+
+#4. Statistical comparisons
 
 ```{r}
 cablocks <- lm(DaysPtoE ~ Block+Treatment, data = CAPupal[is.na(CAPupal$DaysPtoE) == FALSE, ])
@@ -163,5 +320,9 @@ watemp <- lm(DaysPtoE ~ Trt, data = WAPupal[is.na(WAPupal$DaysPtoE) == FALSE, ])
 summary(watemp)
 anova(watemp)
 ```
+
+
+
+
 
 

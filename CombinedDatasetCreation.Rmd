@@ -653,7 +653,6 @@ anova(mod1)
 ```{r}
 NCPupal <- read.csv("~/Desktop/GitHub/Pieris/North_Carolina/NC Pupal/Data/NCPupal2023.csv" , header = T)
 CAPupal <- read.csv("~/Desktop/GitHub/Pieris/California/CAPupal/CAPupal2023.csv", header = T)
-CAPupal26 <- read.csv("~/Desktop/GitHub/Pieris/California/CAPupal/CAPupal26Deg.csv", header = T)
 WAPupal <- read.csv("~/Desktop/GitHub/Pieris/Washington/DataWA/WAPupa.csv", header = T)
 ```
 
@@ -718,24 +717,10 @@ for (i in 1:length(CAPupal$Mass.adult)){
 ```
 
 ```{r}
-CAPupal26$Surv.eclose <- NA
-
-for (i in 1:length(CAPupal26$Mass.adult)){
-  if(is.na(CAPupal26[i,21])== TRUE){
-    CAPupal26[i,28] <- "No"
-  } else if(is.na(CAPupal26[i,21])== FALSE){
-    CAPupal26[i,28] <- "Yes"
-  }
-}
-```
-
-```{r}
 NCPupal <- NCPupal %>% select(Treatment, DaysHtoP, DaysPtoE, Pupate.ok, Emerge.ok, Mass.adult, Surv.eclose)
 NCPupal$Population <- "NC"
 CAPupal <- CAPupal %>% select(Treatment, DaysHtoP, DaysPtoE, Pupate.ok, Emerge.ok, Mass.adult, Surv.eclose)
 CAPupal$Population <- "CA"
-CAPupal26 <- CAPupal26 %>% select(Treatment, DaysHtoP, DaysPtoE, Pupate.ok, Eclose.ok, Mass.adult, Surv.eclose)
-CAPupal26$Population <- "CA"
 WAPupal <- WAPupal %>% select(Trt, DaysHtoP, DaysPtoE, Pupate.ok, Emerge.ok, Mass.adult, Surv.eclose)
 WAPupal$Population <- "WA"
 ```
@@ -743,19 +728,188 @@ WAPupal$Population <- "WA"
 
 ```{r}
 colnames(WAPupal)[1] = "Treatment"
-colnames(CAPupal26)[5] = "Emerge.ok"
 ```
 
 ```{r}
 PupalComb <- rbind(NCPupal, CAPupal)
-PupalComb <- rbind(PupalComb, CAPupal26)
 PupalComb <- rbind(PupalComb, WAPupal)
+
+PupalComb$Type <- "Pupal"
+colnames(PupalComb)[5] = "Eclose.ok"
+
 ```
 
 
 ```{r}
 write.csv(PupalComb, file = "~/Desktop/GitHub/Pieris/PupalCombData.csv")
 ```
+
+
+##7. Creating a combined datasheet of pupal data from larval experiemtns (for comparison with pupal experiments)
+
+```{r}
+NC1Larval <- read.csv("~/Desktop/GitHub/Pieris/North_Carolina/NC_Larval_and_Realistic_Temps/Data/CleanedRound1.csv", header = T)
+NC2Larval <- read.csv("~/Desktop/GitHub/Pieris/NCLarval2023.csv", header= T)
+WA1Larval <- read.csv("~/Desktop/GitHub/Pieris/Washington/DataWA/WABlock1Dev.csv", header = T)
+WA2Larval <- read.csv("~/Desktop/GitHub/Pieris/Washington/DataWA/WABlock2Dev.csv", header = T)
+CALarval <- read.csv("~/Desktop/GitHub/Pieris/California/CALarval/CAPierisLarvalData.csv", header = T)
+```
+
+```{r}
+NC1Larval <- NC1Larval[NC1Larval$Surv.pupa=="Y", ]
+
+for (i in 1:length(NC2Larval$Surv.pupa)){
+  if(is.na(NC2Larval[i,17])== TRUE){
+    NC2Larval[i,15] <- "No"
+  } else if(is.na(NC2Larval[i,17])== FALSE){
+    NC2Larval[i,15] <- "Yes"
+  }
+}
+NC2Larval <- NC2Larval[NC2Larval$Surv.pupa=="Yes", ]
+
+for (i in 1:length(NC2Larval$Surv.eclose)){
+  if(is.na(NC2Larval[i,22])== TRUE){
+    NC2Larval[i,20] <- "No"
+  } else if(is.na(NC2Larval[i,22])== FALSE){
+    NC2Larval[i,20] <- "Yes"
+  }
+}
+
+for (i in 1:length(CALarval$Surv.pupa)){
+  if(is.na(CALarval[i,15])== TRUE){
+    CALarval[i,13] <- "No"
+  } else if(is.na(CALarval[i,15])== FALSE){
+    CALarval[i,13] <- "Yes"
+  }
+}
+
+for (i in 1:length(CALarval$Surv.adult)){
+  if(is.na(CALarval[i,20])== TRUE){
+    CALarval[i,18] <- "No"
+  } else if(is.na(CALarval[i,20])== FALSE){
+    CALarval[i,18] <- "Yes"
+  }
+}
+
+WA1Larval$Surv.pupa <- NA
+for (i in 1:length(WA1Larval$Surv.pupa)){
+  if(is.na(WA1Larval[i,23])== TRUE){
+    WA1Larval[i,26] <- "No"
+  } else if(is.na(WA1Larval[i,23])== FALSE){
+    WA1Larval[i,26] <- "Yes"
+  }
+}
+WA1Larval <- WA1Larval[WA1Larval$Surv.pupa == "Yes", ]
+
+WA2Larval$Surv.pupa <- NA
+for (i in 1:length(WA2Larval$Surv.pupa)){
+  if(is.na(WA2Larval[i,23])== TRUE){
+    WA2Larval[i,25] <- "No"
+  } else if(is.na(WA2Larval[i,23])== FALSE){
+    WA2Larval[i,25] <- "Yes"
+  }
+}
+WA2Larval <- WA2Larval[WA2Larval$Surv.pupa == "Yes", ]
+```
+
+
+```{r}
+NC1Larval <- NC1Larval %>% select(Treatment=Mean.Temp, DaysHtoP=Time.pupa, DaysPtoE=Time.eclose, Pupate.ok=PupateOk, Eclose.ok=EcloseOk, Mass.adult, Surv.eclose)
+NC1Larval$Population <- "NC"
+NC2Larval <- NC2Larval %>% select(Treatment=Mean.temp, DaysHtoP=Time.pupa, DaysPtoE=Time.eclose, Pupate.ok, Eclose.ok, Mass.adult, Surv.eclose)
+NC2Larval$Population <- "NC"
+CALarval <- CALarval %>% select(Treatment=Mean.temp, DaysHtoP=Time.pupa, DaysPtoE=Time.eclose, Pupate.ok, Eclose.ok, Mass.adult, Surv.eclose=Surv.adult)
+CALarval$Population <- "CA"
+WA1Larval <- WA1Larval %>% select(Treatment, DaysHtoP, DaysPtoE, Mass.larvapupa.int, Instar.dead, Mass.adult)
+WA1Larval$Population <- "WA"
+WA2Larval <- WA2Larval %>% select(Treatment, DaysHtoP, DaysPtoE, Mass.larvapupa.int, Instar.dead, Mass.adult)
+WA2Larval$Population <- "WA"
+```
+
+
+### Editing washington columns to align with other populations
+```{r}
+WA1Larval$Pupate.ok <- NA
+
+for (i in 1:length(WA1Larval$Pupate.ok)){
+  if(is.na(WA1Larval[i,4])== TRUE){
+    WA1Larval[i,8] <- "Yes"
+  } else if(is.na(WA1Larval[i,4])== FALSE){
+    WA1Larval[i,8] <- "No"
+  }
+}
+
+WA1Larval$Eclose.ok <- NA
+for (i in 1:length(WA1Larval$Eclose.ok)){
+  if(WA1Larval[i,5]== ""){
+    WA1Larval[i,9] <- "Yes"
+  } else if(WA1Larval[i,5]!= ""){
+    WA1Larval[i,9] <- "No"
+  }
+}
+
+WA1Larval$Surv.eclose <-NA
+for (i in 1:length(WA1Larval$Surv.eclose)){
+  if(WA1Larval[i,5]== "P"){
+    WA1Larval[i,10] <- "No"
+  } else if(WA1Larval[i,5]!= "P"){
+    WA1Larval[i,10] <- "Yes"
+  }
+}
+
+WA2Larval$Pupate.ok <- "Yes"
+
+WA2Larval$Eclose.ok <- NA
+for (i in 1:length(WA2Larval$Eclose.ok)){
+  if(WA2Larval[i,5]== ""){
+    WA2Larval[i,9] <- "Yes"
+  } else if(WA2Larval[i,5]!= ""){
+    WA2Larval[i,9] <- "No"
+  }
+}
+
+WA2Larval$Surv.eclose<- "Yes"
+```
+
+### Retruncate the Washington Data
+
+```{r}
+WA1Larval <- WA1Larval %>% select(Treatment, DaysHtoP, DaysPtoE, Pupate.ok, Eclose.ok, Mass.adult, Surv.eclose, Population)
+
+WA2Larval <- WA2Larval %>% select(Treatment, DaysHtoP, DaysPtoE, Pupate.ok, Eclose.ok, Mass.adult, Surv.eclose, Population)
+```
+
+### combine populations and add a column indicating larval experiment
+
+```{r}
+Larvalcomb <- rbind(NC1Larval, NC2Larval)
+Larvalcomb <-rbind(Larvalcomb, CALarval)
+Larvalcomb <-rbind(Larvalcomb, WA1Larval)
+Larvalcomb <-rbind(Larvalcomb, WA2Larval)
+```
+
+
+```{r}
+Larvalcomb[Larvalcomb=="N"] <- "No"
+Larvalcomb[Larvalcomb=="no"]<- "No"
+Larvalcomb[Larvalcomb=="Y"]<- "Yes"
+Larvalcomb[Larvalcomb=="yes"]<- "Yes"
+```
+
+```{r}
+Larvalcomb <- Larvalcomb[Larvalcomb$Pupate.ok== "Yes", ]
+Larvalcomb$Type <- "Larval"
+```
+
+```{r}
+write.csv(Larvalcomb, file = "~/Desktop/GitHub/Pieris/LarvalCombPupal.csv")
+```
+
+
+
+
+
+
 
 
 
