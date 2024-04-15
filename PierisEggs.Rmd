@@ -25,6 +25,7 @@ library(Rmisc)
 library(dplyr)
 library(ggplot2)
 library(dbplyr)
+library(ggpubr)
 ```
 
 #1. Analyze temperatures 
@@ -206,17 +207,31 @@ GradSurvSum <- summarise(EggGradSurv)
 #3. Egg Chamber Analysis (NC)
 
 ```{r}
-ChamberBlocks <- lm(Time.Hatch ~ Block*Treatment, data = NCEggCham)
+ChamberBlocks <- glm(Time.Hatch ~ Block*Treatment, data = NCEggCham)
 
-ChamberBlocks
-
-anova(ChamberBlocks)
+anova(ChamberBlocks, test = "Chisq")
 
 summary(ChamberBlocks)
+
+AIC(Chamber)
 ```
+
+```{r}
+ChamberBlocks1 <- glm(Time.Hatch ~ Block*poly(Treatment,2), data = NCEggCham)
+
+anova(ChamberBlocks1, test = "Chisq")
+
+AIC(ChamberBlocks1) #1114.976
+```
+```{r}
+anova(ChamberBlocks1, ChamberBlocks2)
+```
+
+
 
 There is a significant block effect in the egg chamber data...
 
+ Egg Chamber Development Rate 
 ```{r}
 NCEggCham$Dev.rate <- 1/NCEggCham$Time.Hatch
 NCEggCham$Expt <- "Chamber"
@@ -235,16 +250,26 @@ for (i in 1:length(NCEggCham$Hatch.Ok)){
 colnames(NCEggCham)[3]<- "Avg_temp"
 ```
 
+
+This one is separated by block
 ```{r}
 EggChamSum <- summarySE(data = NCEggCham[NCEggCham$Hatch.Ok == "Yes", ], measurevar = "Dev.rate", groupvars = c("Avg_temp", "Block"))
-EggChamSum[nrow(EggChamSum)+1, ] <- list(34, 1, 1, 0, 0, 0, 0)
-EggChamSum
 
 EggChamSum$Block <- as.factor(EggChamSum$Block)
 EggChamSum$Avg_temp <- as.factor(EggChamSum$Avg_temp)
-EggChamSum %>%
+EggChamSum %>% 
   select(Avg_temp, Block, N, Dev.rate, se)
 ```
+
+This one is NOT separated by block
+```{r}
+EggChamSumTot <- summarySE(data = NCEggCham[NCEggCham$Hatch.Ok == "Yes", ], measurevar = "Dev.rate", groupvars = c("Avg_temp"))
+
+EggChamSumTot$Avg_temp <- as.factor(EggChamSumTot$Avg_temp)
+EggChamSumTot %>% 
+  select(Avg_temp, N, Dev.rate, se)
+```
+
 
 
 ```{r}
@@ -262,21 +287,126 @@ EggChamDevGraph
 ggsave("~/Desktop/GitHub/Pieris/NCChamberEggDevRate.png", EggChamDevGraph, width = 8, height = 5)
 ```
 
+This one is separted by block
 ```{r}
-Eggchamdev <- ggplot(data = EggChamSum, aes(x = Avg_temp, y = Dev.rate, group = Block, linetype = Block, color = Block)) + 
+Eggchamdev <- ggplot(data = EggChamSum, aes(x = Avg_temp, y = Dev.rate, group = Block, linetype = Block, color = Block, label = N)) +
   theme_bw() + 
-  geom_point(size = 3) + 
-  geom_line(size = 1) +
-  labs(x = "Mean Temperature", y = "Development Rate (1/days)", group = "Block", linetype = "Block", 
+  geom_point(size = 3.5) + 
+  geom_line(size = 1.5) +
+  labs(x = "Mean Temperature (°C)", y = "Development Rate", group = "Block", linetype = "Block", 
        shape = "Block") +
+  font("xy", size = 15)+
+  font("x.text", size = 12)+
+  font("y.text", size= 12)+
+  font("legend.title", size = 15)+
+  font("legend.text", size = 12)+
   scale_linetype_manual(values = c("solid", "dashed")) + 
   scale_color_manual(values = c("#1E88E5", "#ED68DD"))+
   geom_errorbar(aes(ymin = Dev.rate - se, ymax = Dev.rate + se), width = 0.3, linetype = "solid")
 
 Eggchamdev
 ```
+
+
+This one is not separated by block
 ```{r}
-ggsave("~/Desktop/GitHub/Pieris/NCChamberEggDevRate.png", Eggchamdev, width = 8, height = 5)
+Eggchamdevtot <- ggplot(data = EggChamSumTot, aes(x = Avg_temp, y = Dev.rate, label = N, colour = "orange", linetype = , shape = "triangle")) +
+  theme_bw() + 
+  geom_point(size = 3.5) + 
+  geom_line(size = 1.5) +
+  labs(x = "Mean Temperature (°C)", y = "Development Rate") +
+  font("xy", size = 15)+
+  font("x.text", size = 12)+
+  font("y.text", size= 12)+
+  font("legend.title", size = 15)+
+  font("legend.text", size = 12)+
+  scale_linetype_manual(values = c("dashed")) + 
+  scale_color_manual(values = c("orange"))+
+  scale_shape_manual(values = c(17))+
+  geom_errorbar(aes(ymin = Dev.rate - se, ymax = Dev.rate + se), width = 0.3, linetype = "solid")
+
+Eggchamdevtot
+```
+
+
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Thesis/EggDevRate.png", Eggchamdev, width = 8, height = 5)
+```
+
+Egg chamber survival analysis
+
+```{r}
+EggChamSurv <- summarySE(data = NCEggCham, measurevar = "Dev.rate", groupvars = c("Avg_temp", "Block", "Hatch.Ok"))
+
+EggChamSurv
+
+EggChamSurv$Block <- as.factor(EggChamSurv$Block)
+EggChamSurv$Avg_temp <- as.factor(EggChamSurv$Avg_temp)
+EggChamSurv %>%
+  select(Avg_temp, Block, Hatch.Ok, N)
+```
+
+```{r}
+EggChamSurvData <- data.frame(Mean.Temp = c(16, 21, 26, 30, 34, 16, 21, 26, 30, 34), 
+                       surv.perc = 0,
+                       Block = c("1","1","1","1","1","2","2","2","2","2"),
+                       number = 0,
+                       se = 0)
+
+EggChamSurvData[1, 2] <- EggChamSurv[2, 4] / (EggChamSurv[1, 4] + EggChamSurv[2, 4])
+EggChamSurvData[2, 2] <- EggChamSurv[6, 4] / (EggChamSurv[6, 4] + EggChamSurv[5, 4])
+EggChamSurvData[3, 2] <- EggChamSurv[10, 4] / (EggChamSurv[10, 4] + EggChamSurv[9, 4])
+EggChamSurvData[4, 2] <- EggChamSurv[14, 4] / (EggChamSurv[14, 4] + EggChamSurv[13, 4])
+EggChamSurvData[5, 2] <- 0
+EggChamSurvData[6, 2] <- EggChamSurv[4, 4] / (EggChamSurv[4, 4] + EggChamSurv[3, 4])
+EggChamSurvData[7, 2] <- EggChamSurv[8, 4] / (EggChamSurv[8, 4] + EggChamSurv[7, 4])
+EggChamSurvData[8, 2] <- EggChamSurv[12, 4] / (EggChamSurv[12, 4] + EggChamSurv[11, 4])
+EggChamSurvData[9, 2] <- EggChamSurv[16, 4] / (EggChamSurv[16, 4] + EggChamSurv[15, 4])
+EggChamSurvData[10, 2] <- EggChamSurv[19, 4] / (EggChamSurv[19, 4] + EggChamSurv[18, 4])
+
+EggChamSurvData[1, 4] <- (EggChamSurv[1, 4] + EggChamSurv[2, 4])
+EggChamSurvData[2, 4] <- (EggChamSurv[6, 4] + EggChamSurv[5, 4])
+EggChamSurvData[3, 4] <- (EggChamSurv[10, 4] + EggChamSurv[9, 4])
+EggChamSurvData[4, 4] <- (EggChamSurv[14, 4] + EggChamSurv[13, 4])
+EggChamSurvData[5, 4] <- 68
+EggChamSurvData[6, 4] <- (EggChamSurv[4, 4] + EggChamSurv[3, 4])
+EggChamSurvData[7, 4] <- (EggChamSurv[8, 4] + EggChamSurv[7, 4])
+EggChamSurvData[8, 4] <- (EggChamSurv[12, 4] + EggChamSurv[11, 4])
+EggChamSurvData[9, 4] <- (EggChamSurv[16, 4] + EggChamSurv[15, 4])
+EggChamSurvData[10, 4] <- (EggChamSurv[19, 4] + EggChamSurv[18, 4])
+                                                                            
+```
+
+```{r}
+for (i in 1:length(EggChamSurvData$se)){
+  EggChamSurvData[i,5] = sqrt((EggChamSurvData[i,2]*(1-EggChamSurvData[i,2]))/EggChamSurvData[i,4])
+}
+```
+
+
+```{r}
+eggchamsurvgraph <- ggplot(data = EggChamSurvData, aes(x = Mean.Temp, y = surv.perc, group = Block, color = Block, linetype = Block, label = number)) + 
+  #geom_text(hjust=-.5, vjust=0)+
+  theme_bw() + 
+  geom_point(size = 3.5) + 
+  geom_line(size = 1.5) + 
+  font("xy", size = 15)+
+  font("x.text", size = 12)+
+  font("y.text", size= 12)+
+  font("legend.title", size = 15)+
+  font("legend.text", size = 12)+
+  ylim(0, 1) + 
+  scale_color_manual(values = c("#1E88E5", "#ED68DD")) + 
+  scale_linetype_manual(values = c("solid", "dashed")) + 
+  labs(x = "Mean Temperature (°C)", y = "Proportion survival to hatching") +
+  geom_errorbar(aes(ymin = surv.perc - se, ymax = surv.perc + se), width = 1, linetype = "solid")
+
+eggchamsurvgraph
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Thesis/EggSurvival.png", eggchamsurvgraph, width = 8, height = 5)
 ```
 
 
@@ -307,68 +437,50 @@ AllNCEggDev
 ggsave("~/Desktop/GitHub/Pieris/NCEggComp_Color1.png", AllNCEggDev, width = 8, height = 5)
 ```
 
-Egg chamebr survival analysis
 
-```{r}
-EggChamSurv <- summarySE(data = NCEggCham, measurevar = "Dev.rate", groupvars = c("Avg_temp", "Block", "Hatch.Ok"))
-
-EggChamSurv
-
-EggChamSurv$Block <- as.factor(EggChamSurv$Block)
-EggChamSurv$Avg_temp <- as.factor(EggChamSurv$Avg_temp)
-EggChamSurv %>%
-  select(Avg_temp, Block, Hatch.Ok, N)
-```
-
-```{r}
-EggChamSurvData <- data.frame(Mean.Temp = c(16, 21, 26, 30, 34, 16, 21, 26, 30, 34), 
-                       surv.perc = 0,
-                       block = c("1","1","1","1","1","2","2","2","2","2"))
-
-EggChamSurvData[1, 2] <- EggChamSurv[2, 4] / (EggChamSurv[1, 4] + EggChamSurv[2, 4])
-EggChamSurvData[2, 2] <- EggChamSurv[6, 4] / (EggChamSurv[6, 4] + EggChamSurv[5, 4])
-EggChamSurvData[3, 2] <- EggChamSurv[10, 4] / (EggChamSurv[10, 4] + EggChamSurv[9, 4])
-EggChamSurvData[4, 2] <- EggChamSurv[14, 4] / (EggChamSurv[14, 4] + EggChamSurv[13, 4])
-EggChamSurvData[5, 2] <- 0
-EggChamSurvData[6, 2] <- EggChamSurv[4, 4] / (EggChamSurv[4, 4] + EggChamSurv[3, 4])
-EggChamSurvData[7, 2] <- EggChamSurv[8, 4] / (EggChamSurv[8, 4] + EggChamSurv[7, 4])
-EggChamSurvData[8, 2] <- EggChamSurv[12, 4] / (EggChamSurv[12, 4] + EggChamSurv[11, 4])
-EggChamSurvData[9, 2] <- EggChamSurv[16, 4] / (EggChamSurv[16, 4] + EggChamSurv[15, 4])
-EggChamSurvData[10, 2] <- EggChamSurv[19, 4] / (EggChamSurv[19, 4] + EggChamSurv[18, 4])
-                                                                            
-
-```
-
-```{r}
-eggchamsurvgraph <- ggplot(data = EggChamSurvData, aes(x = Mean.Temp, y = surv.perc, group = block, color = block, linetype = block)) + 
-  theme_bw() + 
-  geom_point(size = 3) + 
-  geom_line(size = 1) + 
-  ylim(0, 1) + 
-  scale_color_manual(values = c("#1E88E5", "purple")) + 
-  scale_linetype_manual(values = c("solid", "dashed")) + 
-  labs(x = "Mean Rearing Temperature", y = "Proportion survival to hatching")
-
-eggchamsurvgraph
-```
-
-```{r}
-ggsave("~/Desktop/GitHub/Pieris/NCEggChamSurv.png", eggchamsurvgraph, width = 8, height = 5)
-```
 
 
 #Linear modeling statistics
 
 ```{r}
-eggpop <- lm(Dev.rate ~ Avg_temp*Population, data = CombEggGradData)
-
-summary(eggpop)
-anova(eggpop)
+NCEggCham$Temperature <- NCEggCham$Treatment
+NCEggCham$Treatment <- as.factor(NCEggCham$Treatment)
 ```
 
 
+```{r}
+eggdev <- glm(Time.Hatch ~ Avg_temp*Block, data = NCEggCham[NCEggCham$Hatch.Ok == "Yes", ])
 
+summary(eggdev)
+anova(eggdev, test = "Chisq")
+```
 
+```{r}
+NCEggCham <- NCEggCham %>%
+  mutate(Hatch.Ok = case_when(Hatch.Ok == "Yes" ~ 1,
+                              Hatch.Ok == "No" ~ 0))
+
+eggsurv <- glm(Hatch.Ok ~ Avg_temp*Block, data = NCEggCham, family = binomial(link="logit"))
+
+summary(eggsurv)
+anova(eggsurv, test = "Chisq")
+```
+
+```{r}
+eggdev <- glm(Time.Hatch ~ Treatment*Block, data = NCEggCham)
+
+summary(eggdev)
+anova(eggdev, test = "Chisq")
+
+summary(aov(Dev.rate ~ Avg_temp, data = NCEggCham))
+```
+
+```{r}
+eggsurv <- glm(Hatch.Ok ~ Treatment*Block, data = NCEggCham, family = binomial(link="logit"))
+
+summary(eggsurv)
+anova(eggsurv, test = "Chisq")
+```
 
 
 

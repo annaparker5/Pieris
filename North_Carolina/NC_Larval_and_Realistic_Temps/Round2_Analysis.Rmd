@@ -20,7 +20,7 @@ library(tidyverse)
 ```
 
 ```{r}
-round2 <- read.csv("~/Desktop/GitHub/Pieris/Data/CleanedRound2.csv", header = TRUE)
+round2 <- read.csv("~/Desktop/GitHub/Pieris/North_Carolina/NC_Larval_and_Realistic_Temps/Data/CleanedRound2.csv", header = TRUE)
 
 round2 <- round2[round2$CID != 77, ]
 round2 <- round2[round2$CID != 46, ]

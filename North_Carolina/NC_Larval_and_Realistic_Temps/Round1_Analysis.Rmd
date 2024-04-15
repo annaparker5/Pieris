@@ -437,7 +437,6 @@ for(i in 1:length(data$CID)){
 ```{r}
 survobject <- Surv(data$Time.surv, data$died)
 
-View(survobject)
 ```
 
 ## 4. Run model fit
@@ -464,7 +463,9 @@ survplot <- ggsurvplot(fit = survmodel,
 survplotlegend <- survplot$plot + theme(legend.position = "right")
 
 survplotlegend
+```
 
+```{r}
 ggsave("~/Desktop/GitHub/Pieris/Figures/KMsurvplot.png", survplotlegend, width = 8, height = 5)
 ```
 

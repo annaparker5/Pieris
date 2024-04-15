@@ -33,13 +33,13 @@ WA1wide <- read.csv("~/Desktop/GitHub/Pieris/Washington/DataWA/WABlock1Dev.csv",
 WA2 <- read.csv("~/Desktop/GitHub/Pieris/Washington/DataWA/CleanedBlock2.csv", header = T)
 WA2wide <- read.csv("~/Desktop/GitHub/Pieris/Washington/DataWA/WABlock2Dev.csv", header = T)
 CA <- read.csv("~/Desktop/GitHub/Pieris/California/CALarval/CAPierisLarvalData.csv", header = T)
+WA <- read.csv("~/Desktop/GitHub/Pieris/WALarval.csv", header = T)
 ```
 
 #1. Fill and create necessary columns for each population
 ## Converting Mass.adult column from character to numeric
 ``` {r}
 CA$Mass.adult <- as.numeric(CA$Mass.adult)
-
 ```
 
  Fill unfilled columns at survival for each stage
@@ -126,7 +126,19 @@ CA <- data.frame(lapply(CA, function(x) {
 
 ```
 
+```{r}
+CA$DaysPtoE <- 0
+CA$Time.eclose <- as.numeric(CA$Time.eclose)
+CA$Time.pupa <- as.numeric(CA$Time.pupa)
 
+for(i in 1:length(CA$DaysPtoE)) { 
+  if (CA[i, 18] == "Y"){
+    CA[i, 28] <- CA[i,20] - CA[i,15]
+  } else if (CA[i, 18] != "Y"){
+    CA[i, 28] <- NA
+  }
+}
+```
 
 NC pop round 1
 
@@ -140,6 +152,20 @@ for(i in 1:length(NC1$Time.prepupal.death)) {
     NC1[i, 30] <- NA
   } else if (NC1[i, 19] != "Y"){
     NC1[i, 30] <- NC1[i, 27]
+  }
+}
+```
+
+```{r}
+NC1$DaysPtoE <- 0
+NC1$Time.eclose <- as.numeric(NC1$Time.eclose)
+NC1$Time.pupa <- as.numeric(NC1$Time.pupa)
+
+for(i in 1:length(NC1$DaysPtoE)) { 
+  if (NC1[i, 20] == "Y"){
+    NC1[i, 31] <- NC1[i,22] - NC1[i,17]
+  } else if (NC1[i, 20] != "Y"){
+    NC1[i, 31] <- NA
   }
 }
 ```
@@ -216,9 +242,86 @@ for(i in 1:length(NC2$Time.prepupal.death)) {
 }
 ```
 
+```{r}
+NC2$DaysPtoE <- 0
+NC2$Time.eclose <- as.numeric(NC2$Time.eclose)
+NC2$Time.pupa <- as.numeric(NC2$Time.pupa)
+
+for(i in 1:length(NC2$DaysPtoE)) { 
+  if (NC2[i, 20] == "Y"){
+    NC2[i, 30] <- NC2[i,22] - NC2[i,17]
+  } else if (NC2[i, 20] != "Y"){
+    NC2[i, 30] <- NA
+  }
+}
+```
+
+##Cleaning *NEWLY EDITED* WA data 
+
+Surv.4th
+```{r}
+for (i in 1:length(WA$Surv.4th)){
+  if(is.na(WA[i,4])== TRUE){
+    WA[i,3] <- "N"
+  } else if(is.na(WA[i,4])== FALSE){
+    WA[i,3] <- "Y"
+  }
+}
+```
+
+Surv.5th
+```{r}
+for (i in 1:length(WA$Surv.5th)){
+  if(is.na(WA[i,7])== TRUE){
+    WA[i,6] <- "N"
+  } else if(is.na(WA[i,7])== FALSE){
+    WA[i,6] <- "Y"
+  }
+}
+```
+
+Surv.pupa
+```{r}
+for (i in 1:length(WA$Surv.5th)){
+  if(is.na(WA[i,12])== TRUE){
+    WA[i,10] <- "N"
+  } else if(is.na(WA[i,12])== FALSE){
+    WA[i,10] <- "Y"
+  }
+}
+```
+
+Add prepupal death column
+```{r}
+WA$Time.prepupal.death <- NA
+```
+
+```{r}
+for(i in 1:length(WA$Time.prepupal.death)) { 
+  if (WA[i, 11] == "Yes"){
+    WA[i, 29] <- NA
+  } else if (WA[i, 11] != "Yes"){
+    WA[i, 29] <- WA[i, 9]
+  }
+}
+```
 
 
+Lastly I have to make sure all Yes's are Y and No's are N
 
+```{r}
+WA <- data.frame(lapply(WA, function(x) {
+          gsub("No", "N", x)
+}))
+
+WA <- data.frame(lapply(WA, function(x) {
+          gsub("Yes", "Y", x)
+}))
+
+```
+
+
+## This is all trash now because I did some extra cleaning with WA data
 Washington pops:
 
 
@@ -352,13 +455,15 @@ for (i in 1:length(WA2wide$Prepupal.death.day)){
 WA2wide$Age.prepupal.death <- WA2wide$Prepupal.death.day - WA2wide$day.hatch
 ```
 
+
+
 #2. Select the relevant columns
 
 
 ```{r}
 CASum <- CA %>%
   select(CID = CID, Treatment = Mean.temp, Age.death = Time.prepupal.death, Surv.pupa, PupateOK = Pupate.ok, 
-         Age.pupa = Time.pupa, Mass.pupa = Mass.pupa)
+         Age.pupa = DaysPtoE, Mass.pupa = Mass.pupa)
 
 CASum$Expt <- "CA"
 CASum$Population <- "CA"
@@ -368,7 +473,7 @@ CASum$Population <- "CA"
 ```{r}
 NC1Sum <- NC1 %>%
   select(CID = CID, Treatment = Mean.Temp, Age.death = Time.prepupal.death, Surv.pupa, PupateOK = PupateOk, 
-         Age.pupa = Time.pupa, Mass.pupa = Mass.pupa)
+         Age.pupa = DaysPtoE, Mass.pupa = Mass.pupa)
 
 NC1Sum$Expt <- "NC1"
 NC1Sum$Population <- "NC"
@@ -378,12 +483,14 @@ NC1Sum$Population <- "NC"
 ```{r}
 NC2Sum <- NC2 %>%
   select(CID = CID, Treatment = Mean.temp, Age.death = Time.prepupal.death, Surv.pupa, PupateOK = Pupate.ok, 
-         Age.pupa = Time.pupa, Mass.pupa = Mass.pupa)
+         Age.pupa = DaysPtoE, Mass.pupa = Mass.pupa)
 
 NC2Sum$Expt <- "NC2"
 NC2Sum$Population <- "NC"
 ```
 
+
+This only works if you use the trash code from line 283, not the code from 218 
 ```{r}
 WA1wide <- WA1wide %>%
   select(CID = CID, Treatment = Treatment, Age.death = Age.prepupal.death, Mass.pupa = Mass.pupa)
@@ -397,7 +504,7 @@ WA1merge$Expt <- "WA1"
 WA1merge$Population <- "WA"
 ```
 
-
+This only works if you use the trash code from line 283, not the code from 218
 ```{r}
 WA2wide <- WA2wide %>%
   select(CID = CID, Treatment = Treatment, Age.death = Age.prepupal.death, Mass.pupa = Mass.pupa)
@@ -428,6 +535,56 @@ output <- rbind(output, CASum)
 ```{r}
 write.csv(output, file = "~/Desktop/GitHub/Pieris/PopulationCombData.csv")
 ```
+
+#2 and 3 Part 2... This is done later into analysis to grab columns that I forgot to grab the first time
+
+```{r}
+CA1 <- CA %>%
+  select(CID = CID, Treatment = Mean.temp, Surv.4th, Time.4th, Mass.4th, Surv.5th, Time.5th, Mass.5th, Age.death = Time.prepupal.death, Surv.pupa, PupateOK = Pupate.ok, Age.pupa = Time.pupa, Mass.pupa = Mass.pupa, Surv.adult, Time.eclose = DaysPtoE, Mass.adult, Sex, Eclose.ok)
+
+CA1$Expt <- "CA"
+CA1$Population <- "CA"
+
+#exclude the individual that supposedly eclosed 1 day after pupation in the 16 group...
+CA1 <- CA1[-c(249), ]
+```
+
+
+```{r}
+NC11 <- NC1 %>%
+  select(CID = CID, Treatment = Mean.Temp, Surv.4th, Time.4th, Mass.4th, Surv.5th, Time.5th, Mass.5th, Age.death = Time.prepupal.death, Surv.pupa, PupateOK = PupateOk, Age.pupa = Time.pupa, Mass.pupa = Mass.pupa, Surv.adult = Surv.eclose, Time.eclose = DaysPtoE, Mass.adult, Sex, Eclose.ok= EcloseOk)
+
+NC11$Expt <- "NC1"
+NC11$Population <- "NC"
+```
+
+
+```{r}
+NC12 <- NC2 %>%
+  select(CID = CID, Treatment = Mean.temp, Surv.4th, Time.4th, Mass.4th, Surv.5th, Time.5th, Mass.5th, Age.death = Time.prepupal.death, Surv.pupa, PupateOK = Pupate.ok, Age.pupa = Time.pupa, Mass.pupa = Mass.pupa, Surv.adult = Surv.eclose, Time.eclose = DaysPtoE, Mass.adult, Sex, Eclose.ok)
+
+NC12$Expt <- "NC2"
+NC12$Population <- "NC"
+```
+
+```{r}
+WA1 <- WA %>% 
+  select(CID = CID, Treatment, Surv.4th, Time.4th, Mass.4th, Surv.5th, Time.5th, Mass.5th, Age.death = Time.prepupal.death, Surv.pupa, PupateOK, Age.pupa, Mass.pupa, Surv.adult, Time.eclose, Mass.adult, Sex, Eclose.ok, Expt, Population)
+```
+
+```{r}
+output <- rbind(NC11, NC12)
+
+output <-rbind(output, CA1)
+
+output <- rbind(output, WA1)
+```
+
+
+```{r}
+write.csv(output, file = "~/Desktop/GitHub/Pieris/NEWCombData.csv")
+```
+
 
 
 #4. Survival Analysis
@@ -637,16 +794,6 @@ ggsave("~/Desktop/GitHub/Pieris/Survivalbarcombined.png", combsurvbargraph, widt
 ```
 
 
-#5. Random Analysis
-
-```{r}
-mod1<- lm(Age.pupa ~ Treatment * Population, data= output)
-
-summary(mod1)
-anova(mod1)
-```
-
-
 
 
 #6. Creating a combined pupal datasheet
@@ -717,11 +864,11 @@ for (i in 1:length(CAPupal$Mass.adult)){
 ```
 
 ```{r}
-NCPupal <- NCPupal %>% select(Treatment, DaysHtoP, DaysPtoE, Pupate.ok, Emerge.ok, Mass.adult, Surv.eclose)
+NCPupal <- NCPupal %>% select(Treatment, DaysHtoP, DaysPtoE, Pupate.ok, Emerge.ok, Mass.adult, Surv.eclose, Sex)
 NCPupal$Population <- "NC"
-CAPupal <- CAPupal %>% select(Treatment, DaysHtoP, DaysPtoE, Pupate.ok, Emerge.ok, Mass.adult, Surv.eclose)
+CAPupal <- CAPupal %>% select(Treatment, DaysHtoP, DaysPtoE, Pupate.ok, Emerge.ok, Mass.adult, Surv.eclose, Sex)
 CAPupal$Population <- "CA"
-WAPupal <- WAPupal %>% select(Trt, DaysHtoP, DaysPtoE, Pupate.ok, Emerge.ok, Mass.adult, Surv.eclose)
+WAPupal <- WAPupal %>% select(Trt, DaysHtoP, DaysPtoE, Pupate.ok, Emerge.ok, Mass.adult, Surv.eclose, Sex)
 WAPupal$Population <- "WA"
 ```
 
@@ -814,15 +961,15 @@ WA2Larval <- WA2Larval[WA2Larval$Surv.pupa == "Yes", ]
 
 
 ```{r}
-NC1Larval <- NC1Larval %>% select(Treatment=Mean.Temp, DaysHtoP=Time.pupa, DaysPtoE=Time.eclose, Pupate.ok=PupateOk, Eclose.ok=EcloseOk, Mass.adult, Surv.eclose)
+NC1Larval <- NC1Larval %>% select(Treatment=Mean.Temp, DaysHtoP=Time.pupa, DaysPtoE=Time.eclose, Pupate.ok=PupateOk, Eclose.ok=EcloseOk, Mass.adult, Surv.eclose, Sex)
 NC1Larval$Population <- "NC"
-NC2Larval <- NC2Larval %>% select(Treatment=Mean.temp, DaysHtoP=Time.pupa, DaysPtoE=Time.eclose, Pupate.ok, Eclose.ok, Mass.adult, Surv.eclose)
+NC2Larval <- NC2Larval %>% select(Treatment=Mean.temp, DaysHtoP=Time.pupa, DaysPtoE=Time.eclose, Pupate.ok, Eclose.ok, Mass.adult, Surv.eclose, Sex)
 NC2Larval$Population <- "NC"
-CALarval <- CALarval %>% select(Treatment=Mean.temp, DaysHtoP=Time.pupa, DaysPtoE=Time.eclose, Pupate.ok, Eclose.ok, Mass.adult, Surv.eclose=Surv.adult)
+CALarval <- CALarval %>% select(Treatment=Mean.temp, DaysHtoP=Time.pupa, DaysPtoE=Time.eclose, Pupate.ok, Eclose.ok, Mass.adult, Surv.eclose=Surv.adult, Sex)
 CALarval$Population <- "CA"
-WA1Larval <- WA1Larval %>% select(Treatment, DaysHtoP, DaysPtoE, Mass.larvapupa.int, Instar.dead, Mass.adult)
+WA1Larval <- WA1Larval %>% select(Treatment, DaysHtoP, DaysPtoE, Mass.larvapupa.int, Instar.dead, Mass.adult, Sex)
 WA1Larval$Population <- "WA"
-WA2Larval <- WA2Larval %>% select(Treatment, DaysHtoP, DaysPtoE, Mass.larvapupa.int, Instar.dead, Mass.adult)
+WA2Larval <- WA2Larval %>% select(Treatment, DaysHtoP, DaysPtoE, Mass.larvapupa.int, Instar.dead, Mass.adult, Sex)
 WA2Larval$Population <- "WA"
 ```
 
@@ -874,9 +1021,9 @@ WA2Larval$Surv.eclose<- "Yes"
 ### Retruncate the Washington Data
 
 ```{r}
-WA1Larval <- WA1Larval %>% select(Treatment, DaysHtoP, DaysPtoE, Pupate.ok, Eclose.ok, Mass.adult, Surv.eclose, Population)
+WA1Larval <- WA1Larval %>% select(Treatment, DaysHtoP, DaysPtoE, Pupate.ok, Eclose.ok, Mass.adult, Surv.eclose, Sex, Population)
 
-WA2Larval <- WA2Larval %>% select(Treatment, DaysHtoP, DaysPtoE, Pupate.ok, Eclose.ok, Mass.adult, Surv.eclose, Population)
+WA2Larval <- WA2Larval %>% select(Treatment, DaysHtoP, DaysPtoE, Pupate.ok, Eclose.ok, Mass.adult, Surv.eclose, Sex, Population)
 ```
 
 ### combine populations and add a column indicating larval experiment
@@ -905,12 +1052,27 @@ Larvalcomb$Type <- "Larval"
 write.csv(Larvalcomb, file = "~/Desktop/GitHub/Pieris/LarvalCombPupal.csv")
 ```
 
+#7A. Creating the same dataset from above but differently because I don't trust the previous dataframe
 
+```{r}
+NewCombPupal <- output %>% select(Treatment, PupateOK, Mass.pupa, Surv.adult, Time.eclose, Mass.adult, Sex, Eclose.ok, Expt, Population)
+```
 
+```{r}
+NewCombPupal[NewCombPupal=="N"] <- "No"
+NewCombPupal[NewCombPupal=="no"]<- "No"
+NewCombPupal[NewCombPupal=="Y"]<- "Yes"
+NewCombPupal[NewCombPupal=="yes"]<- "Yes"
+```
 
+```{r}
+NewCombPupal <- NewCombPupal[NewCombPupal$PupateOK== "Yes", ]
+NewCombPupal$Type <- "Larval"
+```
 
-
-
+```{r}
+write.csv(NewCombPupal, file = "~/Desktop/GitHub/Pieris/LarvalNewCombPupal.csv")
+```
 
 
 

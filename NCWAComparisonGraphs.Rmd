@@ -1,12 +1,16 @@
 ---
 title: "Comparing NC WA, and CA data"
 output: html_notebook
+editor_options: 
+  chunk_output_type: inline
 ---
 0. load packages and data
 1. larval dev rate vs temp
 2. pupal mass vs temp
 3. surv to pupation vs temp
 4. north carolina blocked larval dev rate comparison
+5. Statistical analyses
+6. Kaplan meier curves
 
 
 # 0. Load packages and data
@@ -15,11 +19,24 @@ output: html_notebook
 library(dplyr)
 library(ggplot2)
 library(Rmisc)
+library(survminer)
+library(survival)
+library(lmerTest)
+
+library(tidyr)
+library(tidyverse)
+library(plyr)
+library(ggrepel)
+library(janitor)
+library(AICcmodavg)
+library(ggsurvfit)
 ```
 
 ```{r}
 comb <- read.csv("~/Desktop/GitHub/Pieris/PopulationCombData.csv", header = TRUE)
+NewComb <- read.csv("~/Desktop/GitHub/Pieris/NEWCombData.csv", header = TRUE)
 NC2 <- read.csv("~/Desktop/GitHub/Pieris/NCLarval2023.csv", header= T)
+NC1 <- read.csv("~/Desktop/GitHub/Pieris/North_Carolina/NC_Larval_and_Realistic_Temps/Data/CleanedRound1.csv")
 ```
 
 
@@ -28,11 +45,12 @@ NC2 <- read.csv("~/Desktop/GitHub/Pieris/NCLarval2023.csv", header= T)
   
 ```{r}
 comb$Dev.rate <- 1/comb$Age.pupa
+NewComb$Dev.rate <- 1/NewComb$Age.pupa
 ```
 
 
 ```{r}
-devratemeans <- summarySE(data = comb[comb$Surv.pupa == "Y", ], 
+devratemeans <- summarySE(data = NewComb[NewComb$Surv.pupa == "Y", ], 
                                measurevar = "Dev.rate", 
                                groupvars = c("Treatment", "Population"))
 
@@ -46,9 +64,14 @@ devratemeans$Treatment <- as.factor(devratemeans$Treatment)
 ```{r}
 NCWACAdevrate <- ggplot(data = devratemeans, aes(x = Treatment, y = Dev.rate, group = Population, linetype = Population, shape = Population, color = Population)) + 
   theme_bw() + 
-  geom_point(size = 3) + 
-  geom_line(size = 1) +
-  labs(x = "Mean Rearing Temperature", y = "Development Rate", group = "Population", linetype = "Population", 
+  geom_point(size = 3.5) + 
+  geom_line(size = 1.5) +
+  font("xy", size = 15)+
+  font("x.text", size = 12)+
+  font("y.text", size = 12)+
+  font("legend.title", size = 15)+
+  font("legend.text", size = 12)+
+  labs(x = "Mean Rearing Temperature (°C)", y = "Development Rate (1/days)", group = "Population", linetype = "Population", 
        shape = "Population") +
   scale_linetype_manual(values = c("solid", "dashed", "dotted")) + 
   scale_shape_manual(values = c(19, 17, 15)) + 
@@ -60,7 +83,7 @@ NCWACAdevrate
 ```
 
 ```{r}
-ggsave("~/Desktop/GitHub/Pieris/NCWACAcolordevrate.png", NCWACAdevrate, width = 8, height = 5)
+ggsave("~/Desktop/GitHub/Pieris/Thesis/LarvalDevRate.png", NCWACAdevrate, width = 8, height = 5)
 ```
 
 
@@ -70,13 +93,13 @@ ggsave("~/Desktop/GitHub/Pieris/NCWACAcolordevrate.png", NCWACAdevrate, width = 
   
 
 ```{r}
-massmeans <- summarySE(data = comb[comb$Surv.pupa == "Y" & comb$PupateOK == "Y" & !is.na(comb$Mass.pupa), ], 
+massmeans <- summarySE(data = NewComb[NewComb$Surv.pupa == "Y" & NewComb$PupateOK == "Y" & !is.na(NewComb$Mass.pupa), ], 
                                measurevar = "Mass.pupa", 
                                groupvars = c("Treatment", "Population"))
 
 massmeans
 
-massmeans$Treatment <- as.factor(massmeans$Treatment)
+#massmeans$Treatment <- as.factor(massmeans$Treatment)
 ```
 
 
@@ -84,13 +107,18 @@ massmeans$Treatment <- as.factor(massmeans$Treatment)
 ```{r}
 NCWACAmass <- ggplot(data = massmeans, aes(x = Treatment, y = Mass.pupa, group = Population, linetype = Population, shape = Population, color = Population)) + 
   theme_bw() + 
-  geom_point(size = 3) + 
-  geom_line(size = 1) +
-  labs(x = "Mean Rearing Temperature", y = "Pupal Mass (mg)", group = "Population", linetype = "Population", 
+  geom_point(size = 3.5) + 
+  geom_line(size = 1.5) +
+  labs(x = "Mean Rearing Temperature (°C)", y = "Pupal Mass (mg)", group = "Population", linetype = "Population", 
        shape = "Population") +
+  font("xy", size = 15)+
+  font("x.text", size = 12)+
+  font("y.text", size = 12)+
+  font("legend.title", size = 15)+
+  font("legend.text", size = 12)+
   scale_linetype_manual(values = c("solid", "dashed", "dotted")) + 
   scale_shape_manual(values = c(19, 17, 15)) + 
-  geom_errorbar(aes(ymin = Mass.pupa - se, ymax = Mass.pupa + se), width = 0.3, linetype = "solid") +
+  geom_errorbar(aes(ymin = Mass.pupa - se, ymax = Mass.pupa + se), width = 1, linetype = "solid") +
   scale_color_manual(values= c("#1E88E5", "orange", "lime green"))
 
 NCWACAmass
@@ -99,14 +127,14 @@ NCWACAmass
 
 
 ```{r}
-ggsave("~/Desktop/GitHub/Pieris/NCWACAmass.png", NCWACAmass, width = 8, height = 5)
+ggsave("~/Desktop/GitHub/Pieris/Thesis/LarvalMass.png", NCWACAmass, width = 8, height = 5)
 ```
 
 
 # 3. Surv to pupation vs. temp
   - Include LPIs
   
-
+#3A. This is all trash... done before 2nd NC experiment
 ```{r}
 survpercsum <- summarySE(data = comb, 
                          measurevar = "CID", 
@@ -178,12 +206,17 @@ NCWACAsurv
 ggsave("~/Desktop/GitHub/Pieris/NCWACAsurv.png", NCWACAsurv, width = 8, height = 5)
 ```
 
-## 3A. Surv to Pupation vs Temp (by population instead of blocked)
+## 3B. Surv to Pupation vs Temp (With intermediates being survivors)
   - Include LPIs
   
 
 ```{r}
-survpercsum <- summarySE(data = comb, 
+for (i in 1:length(NewComb$Age.death)) {
+  if  (NewComb[i, 12] == "N"){
+    NewComb[i, 10] = NewComb[i,13]}
+}
+
+survpercsum <- summarySE(data = NewComb, 
                          measurevar = "CID", 
                          groupvars = c("Treatment", "Population", "Surv.pupa"))
 
@@ -194,9 +227,9 @@ survpercsum
 ```{r}
 survdata <- data.frame(Treatment = rep(c(16, 21, 26, 30, 34), times = 3), 
                        surv.perc = 0, 
-                       Population = rep(c("NC", "WA", "CA"), each = 5))
-
-survdata$Treatment <- as.factor(survdata$Treatment)
+                       N = 0,
+                       Population = rep(c("NC", "WA", "CA"), each = 5),
+                       se = 0)
 ```
 
 
@@ -206,8 +239,6 @@ survdata[2, 2] <- survpercsum[10, 4] / (survpercsum[10, 4] + survpercsum[9, 4])
 survdata[3, 2] <- survpercsum[16, 4] / (survpercsum[16, 4] + survpercsum[15, 4])
 survdata[4, 2] <- survpercsum[22, 4] / (survpercsum[22, 4] + survpercsum[21, 4])
 survdata[5, 2] <- survpercsum[28, 4] / (survpercsum[28, 4] + survpercsum[27, 4])
-
-
 
 survdata[6, 2] <- survpercsum[6, 4] / (survpercsum[6, 4] + survpercsum[5, 4])
 survdata[7, 2] <- survpercsum[12, 4] / (survpercsum[12, 4] + survpercsum[11, 4])
@@ -221,56 +252,190 @@ survdata[13, 2] <- survpercsum[14, 4] / (survpercsum[14, 4] + survpercsum[13, 4]
 survdata[14, 2] <- survpercsum[20, 4] / (survpercsum[20, 4] + survpercsum[19, 4])
 survdata[15, 2] <- survpercsum[26, 4] / (survpercsum[26, 4] + survpercsum[25, 4])
 
-
+survdata[1,3] <- (survpercsum[4, 4] + survpercsum[3, 4])
+survdata[2,3] <-(survpercsum[10, 4] + survpercsum[9, 4])
+survdata[3,3]<-(survpercsum[16, 4] + survpercsum[15, 4])
+survdata[4,3]<-(survpercsum[22, 4] + survpercsum[21, 4])
+survdata[5,3]<-(survpercsum[28, 4] + survpercsum[27, 4])
+survdata[6,3]<-(survpercsum[6, 4] + survpercsum[5, 4])
+survdata[7,3]<-(survpercsum[12, 4] + survpercsum[11, 4])
+survdata[8,3]<-(survpercsum[18, 4] + survpercsum[17, 4])
+survdata[9,3]<-(survpercsum[24, 4] + survpercsum[23, 4])
+survdata[10,3]<- (survpercsum[30, 4] + survpercsum[29, 4])
+survdata[11,3]<-(survpercsum[2, 4] + survpercsum[1, 4])
+survdata[12,3]<-(survpercsum[8, 4] + survpercsum[7, 4])
+survdata[13,3]<-(survpercsum[14, 4] + survpercsum[13, 4])
+survdata[14,3]<- (survpercsum[20, 4] + survpercsum[19, 4])
+survdata[15,3]<-(survpercsum[26, 4] + survpercsum[25, 4])
 ```
 
-
+```{r}
+for (i in 1:length(survdata$se)){
+  survdata[i,5] = sqrt((survdata[i,2]*(1-survdata[i,2]))/survdata[i,3])
+}
+```
 
 
 ```{r}
 NCWACAsurv <- ggplot(data = survdata, aes(x = Treatment, y = surv.perc, group = Population, linetype = Population, shape = Population, color = Population)) + 
   theme_bw() + 
-  geom_point(size = 3) + 
-  geom_line(size = 1) +
-  labs(x = "Mean Rearing Temperature", y = "Proportion surviving to pupation", group = "Population", linetype = "Population", shape = "Population") +
+  geom_point(size = 3.5) + 
+  geom_line(size = 1.5) +
+  font("xy", size = 15)+
+  font("x.text", size = 12)+
+  font("y.text", size = 12)+
+  font("legend.title", size= 15)+
+  font("legend.text", size = 12)+
+  labs(x = "Mean Rearing Temperature (°C)", y = "Proportion surviving to pupation", group = "Population", linetype = "Population", shape = "Population") +
   scale_linetype_manual(values = c("solid", "dashed", "dotted")) + 
   scale_shape_manual(values = c(19, 17, 15)) +
-  scale_color_manual(values = c("#1E88E5", "orange", "lime green"))
+  scale_color_manual(values = c("#1E88E5", "orange", "lime green"))+
+  geom_errorbar(aes(ymin = surv.perc - se, ymax = surv.perc +se), width = 1, linetype = "solid")
 
 NCWACAsurv
-  
 ```
 
 
 
 ```{r}
-ggsave("~/Desktop/GitHub/Pieris/NCWACAsurv.png", NCWACAsurv, width = 8, height = 5)
+ggsave("~/Desktop/GitHub/Pieris/Thesis/LarvalSurvival.png", NCWACAsurv, width = 8, height = 5)
 ```
 
-##3B. Time of death versus rearing temperature
+##3C. Survival Proportions (With intermediates being deaths)
 
 ```{r}
-TODmeans <- summarySE(data = comb[!is.na(comb$Age.death), ], 
+NewComb1 <- NewComb
+
+
+for (i in 1:length(NewComb1$Age.death)) {
+  if  (NewComb1[i, 12] == "N"){
+    NewComb1[i, 10] = NewComb1[i,13]}
+}
+
+
+NewComb1 <- NewComb1 %>%
+  mutate(Age.pupa = ifelse(is.na(Age.pupa), 10000, Age.pupa))
+
+NewComb1 <- NewComb1 %>%
+  mutate(Surv.pupa = ifelse(is.na(Age.death) | Age.death > Age.pupa, "Y", "N"))
+```
+
+```{r}
+survpercsum <- summarySE(data = NewComb1, 
+                         measurevar = "CID", 
+                         groupvars = c("Treatment", "Population", "Surv.pupa"))
+
+survpercsum
+```
+
+```{r}
+survdata1 <- data.frame(Treatment = rep(c(16, 21, 26, 30, 34), times = 3), 
+                       surv.perc = 0, 
+                       N = 0,
+                       Population = rep(c("NC", "WA", "CA"), each = 5),
+                       se = 0)
+```
+
+
+```{r}
+survdata1[1, 2] <- survpercsum[4, 4] / (survpercsum[4, 4] + survpercsum[3, 4])
+survdata1[2, 2] <- survpercsum[10, 4] / (survpercsum[10, 4] + survpercsum[9, 4])
+survdata1[3, 2] <- survpercsum[16, 4] / (survpercsum[16, 4] + survpercsum[15, 4])
+survdata1[4, 2] <- survpercsum[22, 4] / (survpercsum[22, 4] + survpercsum[21, 4])
+survdata1[5, 2] <- survpercsum[28, 4] / (survpercsum[28, 4] + survpercsum[27, 4])
+
+survdata1[6, 2] <- survpercsum[6, 4] / (survpercsum[6, 4] + survpercsum[5, 4])
+survdata1[7, 2] <- survpercsum[12, 4] / (survpercsum[12, 4] + survpercsum[11, 4])
+survdata1[8, 2] <- survpercsum[18, 4] / (survpercsum[18, 4] + survpercsum[17, 4])
+survdata1[9, 2] <- survpercsum[24, 4] / (survpercsum[24, 4] + survpercsum[23, 4])
+survdata1[10, 2] <- survpercsum[30, 4] / (survpercsum[30, 4] + survpercsum[29, 4])
+
+survdata1[11, 2] <- survpercsum[2, 4] / (survpercsum[2, 4] + survpercsum[1, 4])
+survdata1[12, 2] <- survpercsum[8, 4] / (survpercsum[8, 4] + survpercsum[7, 4])
+survdata1[13, 2] <- survpercsum[14, 4] / (survpercsum[14, 4] + survpercsum[13, 4])
+survdata1[14, 2] <- survpercsum[20, 4] / (survpercsum[20, 4] + survpercsum[19, 4])
+survdata1[15, 2] <- survpercsum[26, 4] / (survpercsum[26, 4] + survpercsum[25, 4])
+
+survdata1[1,3] <- (survpercsum[4, 4] + survpercsum[3, 4])
+survdata1[2,3] <-(survpercsum[10, 4] + survpercsum[9, 4])
+survdata1[3,3]<-(survpercsum[16, 4] + survpercsum[15, 4])
+survdata1[4,3]<-(survpercsum[22, 4] + survpercsum[21, 4])
+survdata1[5,3]<-(survpercsum[28, 4] + survpercsum[27, 4])
+survdata1[6,3]<-(survpercsum[6, 4] + survpercsum[5, 4])
+survdata1[7,3]<-(survpercsum[12, 4] + survpercsum[11, 4])
+survdata1[8,3]<-(survpercsum[18, 4] + survpercsum[17, 4])
+survdata1[9,3]<-(survpercsum[24, 4] + survpercsum[23, 4])
+survdata1[10,3]<- (survpercsum[30, 4] + survpercsum[29, 4])
+survdata1[11,3]<-(survpercsum[2, 4] + survpercsum[1, 4])
+survdata1[12,3]<-(survpercsum[8, 4] + survpercsum[7, 4])
+survdata1[13,3]<-(survpercsum[14, 4] + survpercsum[13, 4])
+survdata1[14,3]<- (survpercsum[20, 4] + survpercsum[19, 4])
+survdata1[15,3]<-(survpercsum[26, 4] + survpercsum[25, 4])
+```
+
+```{r}
+for (i in 1:length(survdata1$se)){
+  survdata1[i,5] = sqrt((survdata1[i,2]*(1-survdata1[i,2]))/survdata1[i,3])
+}
+```
+
+
+```{r}
+NCWACAsurv <- ggplot(data = survdata1, aes(x = Treatment, y = surv.perc, group = Population, linetype = Population, shape = Population, color = Population)) + 
+  theme_bw() + 
+  geom_point(size = 3.5) + 
+  geom_line(size = 1.5) +
+  font("xy", size = 15)+
+  font("x.text", size = 12)+
+  font("y.text", size = 12)+
+  font("legend.title", size= 15)+
+  font("legend.text", size = 12)+
+  labs(x = "Mean Rearing Temperature (°C)", y = "Proportion surviving to pupation", group = "Population", linetype = "Population", shape = "Population") +
+  scale_linetype_manual(values = c("solid", "dashed", "dotted")) + 
+  scale_shape_manual(values = c(19, 17, 15)) +
+  scale_color_manual(values = c("#1E88E5", "orange", "lime green"))+
+  geom_errorbar(aes(ymin = surv.perc - se, ymax = surv.perc +se), width = 1, linetype = "solid")
+
+NCWACAsurv
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Thesis/LarvalSurvival.png", NCWACAsurv, width = 8, height = 5)
+```
+
+##3D. Time of death versus rearing temperature
+
+```{r}
+TODmeans <- summarySE(data = NewComb[!is.na(NewComb$Age.death), ], 
                                measurevar = "Age.death", 
                                groupvars = c("Treatment", "Population"))
 
 TODmeans
 
-TODmeans$Treatment <- as.factor(TODmeans$Treatment)
-TODmeans$Size <- TODmeans$N/10
+#TODmeans$Treatment <- as.factor(TODmeans$Treatment)
+#survdata1 <- survdata %>% select(Treatment, Population, surv.perc)
+
+#TODmeans <- merge(TODmeans, survdata1, by = c("Treatment", "Population"))
+#TODmeans$mort.perc <- 1- TODmeans$surv.perc
+#TODmeans$Size <- TODmeans$surv.perc*5
 ```
 
 ```{r}
 CombTOD <- ggplot(data = TODmeans, aes(x = Treatment, y = Age.death, group = Population, linetype = Population, shape = Population, color = Population)) + 
   theme_bw() + 
-  geom_point(size = 3) + 
-  geom_line(size = 1) +
-  labs(x = "Temperature Treatment", y = "Average time to death (Days)", group = "Population", linetype = "Population", 
+  geom_point(size=3.5) + 
+  geom_line(size = 1.5) +
+  labs(x = "Mean temperature", y = "Average time to death (Days)", group = "Population", linetype = "Population", 
        shape = "Population")+ 
+  font("xy", size = 15)+
+  font("x.text", size = 12)+
+  font("y.text", size = 12)+
+  font("legend.title", size= 15)+
+  font("legend.text", size = 12)+
   scale_linetype_manual(values = c("solid", "dashed", "dotted")) + 
   scale_shape_manual(values = c(19, 17, 15))+
   scale_color_manual(values = c("#1E88E5", "orange", "lime green"))+
-  geom_errorbar(aes(ymin = Age.death - se, ymax = Age.death + se), width = 0.3, linetype = "solid")
+  geom_errorbar(aes(ymin = Age.death - se, ymax = Age.death + se), width = 1, linetype = "solid")
 
 CombTOD
   
@@ -279,7 +444,80 @@ CombTOD
 ggsave("~/Desktop/GitHub/Pieris/NCWACAtimedeath.png", CombTOD, width = 8, height = 5)
 ```
 
+# Growth rate graphs
 
+
+### Mean mass and SE
+
+```{r}
+pupalmean <- summarySE(data = NewComb[NewComb$Surv.pupa == "Y", ], measurevar = "Mass.pupa", groupvars = c("Treatment", "Population"))
+
+pupalmean
+
+pupalmean$Mass.se <- pupalmean$se
+
+pupalmean <- pupalmean %>%
+  select(Treatment, Population, N, Mass.pupa, Mass.se)
+
+```
+
+### Mean dev time and SE
+
+```{r}
+pupaltimemean <- summarySE(data = NewComb[NewComb$Surv.pupa == "Y", ], measurevar = "Age.pupa", groupvars = c("Treatment", "Population"))
+
+pupaltimemean
+
+pupaltimemean$Time.se <- pupaltimemean$se
+
+pupaltimemean <- pupaltimemean %>%
+  select(Treatment, Population, N, Age.pupa, Time.se)
+```
+
+### Merge together
+
+```{r}
+pupalmeans <- merge(pupalmean, pupaltimemean, by = c("Treatment", "Population", "N"))
+```
+
+
+## Add in dvelopment rate
+
+```{r}
+NewComb$Dev.rate <- 1 / (NewComb$Age.pupa)
+```
+
+```{r}
+pupalratemean <- summarySE(data = NewComb[NewComb$Surv.pupa == "Y", ], measurevar = "Dev.rate", groupvars = c("Treatment", "Population"))
+
+pupalratemean
+
+pupalratemean$Rate.se <- pupalratemean$se
+
+pupalratemean <- pupalratemean %>%
+  select(Treatment, Population, N, Dev.rate, Rate.se)
+```
+
+
+```{r}
+pupalmeans <- merge(pupalmeans, pupalratemean, by = c("Treatment", "Population", "N"))
+
+pupalmeans$Treatment <- as.factor(pupalmeans$Treatment)
+```
+
+```{r}
+pupalgraph <- ggplot(data = pupalmeans, aes(x = Age.pupa, y = Mass.pupa, color = Population, shape = Treatment)) + 
+  theme_bw() + 
+  geom_point(size = 3) + 
+  geom_errorbar(aes(ymin = Mass.pupa - Mass.se, ymax = Mass.pupa + Mass.se)) + 
+  geom_errorbarh(aes(xmin = Age.pupa - Time.se, xmax = Age.pupa + Time.se)) + 
+  guides(scale = "none") + 
+  scale_color_manual(values = c("#1E88E5", "lime green", "orange")) + 
+  labs(x = "Time until pupation (days)", y = "Mass at pupation (mg)", color = "Mean temperature treatment", shape = "Treatment")
+
+
+pupalgraph
+```
 
 #4.North Carolina Experiment Comparisons
 
@@ -320,32 +558,751 @@ ggsave("~/Desktop/GitHub/Pieris/NCDevRateComb.png", NCdevrate, width = 8, height
 #5. Statistical Analyses
 
 ```{r}
-popcomb <- lm(Dev.rate ~ Treatment*Population, data = comb[is.na(comb$Dev.rate) == FALSE, ])
+#To prevent the issues from switching between factor and numeric, from now on, Treatment is a factor and temperature is the same thing but numeric
+NewComb$Temperature <- NewComb$Treatment
+NewComb$Treatment <- as.factor(NewComb$Treatment)
+```
+
+```{r}
+popcomb1 <- glm(Age.pupa ~ Treatment*Population, data = NewComb)
+
+summary(popcomb1)
+anova(popcomb1, test= "Chisq")
+```
+
+```{r}
+popcomb2 <- glm(Age.pupa ~ poly(Temperature, degree = 2)*Population, data = NewComb)
+
+summary(popcomb2)
+anova(popcomb2, test = "Chisq")
+```
+```{r}
+anova(popcomb1, popcomb2, test = "Chisq")
+```
+
+```{r}
+popcomb3 <- glm(Age.pupa ~ Treatment*Population, data = NewComb[NewComb$PupateOK == "Y", ])
 
 summary(popcomb)
-anova(popcomb)
+anova(popcomb, test= "Chisq")
 ```
 ```{r}
-comb$Expt = as.factor(comb$Expt)
-ncblock <- lm(Dev.rate ~ Treatment*Expt, data = comb[comb$Population == "NC", ])
+popcomb4 <- glm(Age.pupa ~ poly(Temperature, degree = 2)*Population, data = NewComb[NewComb$PupateOK == "Y", ])
+
+summary(popcomb4)
+anova(popcomb4, test = "Chisq")
+```
+
+```{r}
+anova(popcomb3, popcomb4, test = "Chisq")
+```
+
+
+```{r}
+NewComb$Expt = as.factor(NewComb$Expt)
+ncblock <- glm(Age.pupa ~ poly(Temperature, 2)*Expt, data = NewComb[NewComb$Population == "NC", ])
 
 summary(ncblock)
-anova(ncblock)
+anova(ncblock, test="Chisq")
+```
+
+
+```{r}
+ncblock2 <- lmer(Age.pupa ~ poly(Temperature) + (Temperature | Expt) , data = NewComb[NewComb$Population == "NC", ])
+
+summary(ncblock2)
+anova(ncblock2, test="Chisq")
 ```
 
 ```{r}
-nc2sib <- lm(Time.pupa ~ Mean.temp*Sib, data = NC2[is.na(NC2$Time.pupa) == FALSE, ])
+nc2sib <- lmer(Time.pupa ~ poly(Mean.temp,2)+(1 | Sib), data = NC2[is.na(NC2$Time.pupa) == FALSE, ])
 
 summary(nc2sib)
-anova(nc2sib)
+anova(nc2sib, test="Chisq")
 ```
 
 ```{r}
-nc2hatchloc <- lm(Time.pupa ~ Mean.temp*Hatch.loc, data = NC2[is.na(NC2$Time.pupa) == FALSE, ])
+NC1$SIB <- as.factor(NC1$SIB)
+nc1sib <- lmer(Time.pupa ~ poly(Mean.Temp ,2)* (Mean.Temp | SIB), data = NC1[is.na(NC1$Time.pupa) == FALSE, ])
 
-summary(nc2hatchloc)
-anova(nc2hatchloc)
+summary(nc1sib)
+anova(nc1sib, test="Chisq")
 ```
 
 
+```{r}
+nc2hatchloc <- glm(Time.pupa ~ poly(Mean.temp, 2)*Hatch.loc, data = NC2[is.na(NC2$Time.pupa) == FALSE, ])
+
+summary(nc2hatchloc)
+anova(nc2hatchloc, test = "Chisq")
+```
+
+```{r}
+NewComb$binarypupalsurv <- 0
+NewComb <- NewComb %>%
+  mutate(binarypupalsurv = case_when(Surv.pupa == "Y" ~ 1,
+                              Surv.pupa == "N" ~ 0))
+```
+
+```{r}
+larvalsurv <- glm(binarypupalsurv ~ Population*Temperature, data = NewComb, family = binomial(link= "logit"))
+
+summary(larvalsurv)
+anova(larvalsurv, test = "Chisq")
+```
+
+Interaction not significant so do additive instead... 
+```{r}
+larvalsurv <- glm(binarypupalsurv ~ Population+Temperature, data = NewComb, family = binomial(link= "logit"))
+
+summary(larvalsurv)
+anova(larvalsurv, test = "Chisq")
+```
+
+
+```{r}
+larvalsurv1 <- glm(Age.death ~ Population*poly(Treatment, 2)*binarypupalsurv, data = NewComb)
+
+summary(larvalsurv1)
+anova(larvalsurv1, test = "Chisq")
+```
+
+```{r}
+larvalsurv2 <- glm(Age.death ~ Population*Treatment, data = NewComb)
+
+summary(larvalsurv2)
+anova(larvalsurv2, test = "Chisq")
+```
+
+```{r}
+anova(larvalsurv1, larvalsurv2, test = "Chisq")
+```
+
+
+```{r}
+NCSurvBlock <- glm(binarypupalsurv ~ Treatment*Expt, data = NewComb[NewComb$Population == "NC", ], family = binomial(link= "logit"))
+
+summary(NCSurvBlock)
+anova(NCSurvBlock, test = "Chisq")
+```
+
+```{r}
+glm(Mass.pupa ~ Temperature*Population, data = NewComb)
+
+summary(glm(Mass.pupa ~ Temperature*Population, data = NewComb))
+anova(glm(Mass.pupa ~ Temperature*Population, data = NewComb), test = "Chisq")
+```
+
+
+```{r}
+anova(glm(Age.pupa ~ poly(Temperature, 2)*Population*PupateOK, data= NewComb), test = "Chisq")
+```
+
+
+
+#6. Kaplan Meier- SCRAPPED 
+
+## 6a. North Carolina Larval Kaplan Meier Curve Creation
+
+Creating an Age.exit column that is either the day the individual died or the day it pupated
+```{r}
+NCSurv <- NewComb[NewComb$Population == "NC", ] 
+NCSurv$Treatment <- as.factor(NCSurv$Treatment)
+NCSurv <- NCSurv %>%
+  mutate(Age.exit = case_when(!is.na(Age.death) ~ Age.death,
+                              !is.na(Age.pupa) ~ Age.pupa))
+```
+
+Creating a censoring column where we are censoring the individuals that pupated 
+```{r}
+NCSurv$censor <- 0
+
+for(i in 1:length(NCSurv$Surv.pupa)){
+  if((NCSurv[i, 11]) == "Y"){
+    NCSurv[i, 23] <- 1
+  } else if((NCSurv[i, 11]) == "N"){
+    NCSurv[i, 23] <- 0
+  }
+}
+```
+
+Creating the Survival object for use with kaplan meier
+```{r}
+NCsurvobject <- Surv(NCSurv$Age.exit, NCSurv$censor)
+```
+
+```{r}
+View(NCsurvobject)
+```
+
+Creating the kaplan meier model
+```{r}
+NCsurvmodel <- survfit(NCsurvobject ~ Treatment, data = NCSurv ) 
+```
+
+```{r}
+View(survmodel)
+```
+
+Plotting Kaplan meier curve for North Carolina Larva
+```{r}
+plot(NCsurvmodel)
+
+NCsurvplot <- ggsurvplot(fit = NCsurvmodel, 
+           data = NCSurv, 
+           xlab = "Days in experiment", 
+           ylab = "Survival probability",  
+           palette = c("purple", "#1E88E5", "lime green", "orange", "#D81B60"),
+           conf.int=T)
+
+NCsurvplotlegend <- NCsurvplot$plot + theme(legend.position = "right")
+
+NCsurvplotlegend
+```
+
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/NCLarvalKP.png", survplotlegend, width = 8, height = 5)
+```
+
+
+Getting weird looking graph for NC... Let's try calculating the mean and stardard deviations of the age.pupal column for each treatment, so we can exlude individuals who are more than two standard devs from the mean
+
+
+```{r}
+NCSurvSum <- summarySE(data = NCSurv, measurevar = "Age.exit", groupvars = c("Treatment", "Surv.pupa"))
+
+NCSurvSum <- NCSurvSum %>% select(Treatment, Surv.pupa, Age.exit, sd)
+
+NCSurvSum$Age.limit <- NCSurvSum$Age.exit + NCSurvSum$sd*2
+
+NCSurvSum
+```
+
+When I do this, it actually doesn't exclude anyone so let me create a boxplot to look at the data
+
+```{r}
+survbox <- ggplot(data = NCSurv, aes(x = Treatment, y = Age.exit)) + 
+  theme_bw() + 
+  geom_boxplot() + 
+  labs(x = "Treatment", y = "Age to experimental exit")
+
+survbox
+```
+
+
+Lets try using slice_max in dplyer to just remove the highest age.exit or two for each treatment group
+
+```{r}
+NCSurv1 <- NCSurv1 %>% 
+  group_by(Treatment) %>%
+  filter(Age.exit < max(Age.exit))
+
+```
+
+Creating the Survival object for use with kaplan meier
+```{r}
+NCsurv1object <- Surv(NCSurv1$Age.exit, NCSurv1$censor)
+```
+
+```{r}
+View(NCsurv1object)
+```
+
+Creating the kaplan meier model
+```{r}
+NCsurv1model <- survfit(NCsurv1object ~ Treatment, data = NCSurv1 ) 
+```
+
+```{r}
+View(survmodel)
+```
+
+Plotting Kaplan meier curve for North Carolina Larva
+```{r}
+plot(NCsurv1model)
+
+NCsurv1plot <- ggsurvplot(fit = NCsurv1model, 
+           data = NCSurv1, 
+           xlab = "Days in experiment", 
+           ylab = "Survival probability",  
+           palette = c("purple", "#1E88E5", "lime green", "orange", "#D81B60"),
+           conf.int=T)
+
+NCsurv1plotlegend <- NCsurv1plot$plot + theme(legend.position = "right")
+
+NCsurv1plotlegend
+```
+
+This didnt do anything either... at this point I'm saying no more kaplan meier
+
+## 6b. Kaplan Meier curve for California Larval 
+
+Creating an Age.exit column that is either the day the individual died or the day it pupated
+```{r}
+CASurv <- comb[comb$Population == "CA", ] 
+CASurv <- CASurv %>%
+  mutate(Age.exit = case_when(!is.na(Age.death)~ Age.death,
+                              !is.na(Age.pupa)~ Age.pupa))
+```
+
+Creating a censoring column where we are censoring the individuals that pupated
+```{r}
+CASurv$censor <- 0
+
+for(i in 1:length(CASurv$Age.death)){
+  if(is.na(CASurv[i, 4]) == TRUE){
+    CASurv[i, 12] <- 1
+  } else if(is.na(CASurv[i, 4]) == FALSE){
+    CASurv[i, 12] <- 2
+  }
+}
+
+```
+
+Creating a surv object for use with kaplan meier
+```{r}
+CAsurvobject <- Surv(CASurv$Age.death, CASurv$censor)
+```
+
+Creating the kaplan meier model
+```{r}
+CAsurvmodel <- survfit(CAsurvobject ~ Treatment, data = CASurv ) 
+```
+
+Plotting the Kaplan Meier Curves for California larval experiment
+```{r}
+plot(CAsurvmodel)
+
+CAsurvplot <- ggsurvplot(fit = CAsurvmodel, 
+           data = CASurv, 
+           xlab = "Days in experiment", 
+           ylab = "Survival probability",  
+           palette = c("purple", "#1E88E5", "lime green", "orange", "#D81B60"),
+           conf.int=T)
+
+CAsurvplotlegend <- CAsurvplot$plot + theme(legend.position = "right")
+
+CAsurvplotlegend
+```
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/CALarvalKP.png", survplotlegend, width = 8, height = 5)
+```
+
+
+## 6c. Washington larval kaplan meier curve (NOT DONE YET)
+```{r}
+WASurv <- comb[comb$Population == "WA", ] 
+
+WASurv$died <- 0
+
+for(i in 1:length(WASurv$Age.death)){
+  if(is.na(WASurv[i, 4]) == TRUE){
+    WASurv[i, 11] <- 0
+  } else if(is.na(WASurv[i, 4]) == FALSE){
+    WASurv[i, 11] <- 1
+  }
+}
+```
+
+
+```{r}
+survobject <- Surv(WASurv$Age.death, WASurv$died)
+```
+
+
+```{r}
+survmodel <- survfit(survobject ~ Treatment, data = WASurv ) 
+```
+
+
+```{r}
+survplot <- ggsurvplot(fit = survmodel, 
+           data = WASurv, 
+           xlab = "Days in experiment", 
+           ylab = "Survival probability",  
+           palette = c("purple", "#1E88E5", "lime green", "orange", "#D81B60"),
+           conf.int=T)
+
+survplotlegend <- survplot$plot + theme(legend.position = "right")
+
+survplotlegend
+```
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/WALarvalKP.png", survplotlegend, width = 8, height = 5)
+```
+
+
+
+
+#7. Creating graphs will proportion surviving each day for each treatment group
+
+## Starting with NC...
+
+### This is for the time period from hatching until pupation but uses larval pupal intermediates as deaths
+```{r}
+NCSurv <- NewComb[NewComb$Population == "NC", ] 
+NCSurv$Treatment <- as.factor(NCSurv$Treatment)
+
+deaths<-NCSurv %>%
+  filter(!is.na(Age.death))
+
+#survivors <- NCSurv %>%
+  #filter(is.na(Age.death))
+```
+
+```{r}
+# Get unique treatments
+treatments <- unique(NCSurv$Treatment)
+
+# Initialize an empty data frame to store results
+NCDeathCounts <- data.frame(Day = 0, Treatment = as.factor(0), Deaths = 0)
+
+# Loop through each treatment
+for (treat in treatments) {
+  # Create new dataframe for each treatment
+  treat_data <- deaths[deaths$Treatment == treat, ]
+  result_df <- data.frame(Day = 1:max(deaths$Age.death), Treatment = treat, Deaths = 0)
+      
+  # Loop through each day in that treatment
+  for (day in result_df$Day) {
+    # Get a death count for each day and add to the result_df 
+    D.count = sum(treat_data$Age.death == day)
+    result_df[day, 3] = D.count
+    }
+
+  # Append result_df to the main data frame
+  NCDeathCounts <- rbind(NCDeathCounts, result_df)
+  
+}
+```
+
+
+```{r}
+# Add a day 0 row for each treatment 
+Day0 <- data.frame(Day = 0, Treatment = c(16,21,26,30,34), Deaths = 0)
+NCDeathCounts <-rbind(NCDeathCounts, Day0)
+
+#Get rid of the first row which was used to create the dataframe
+NCDeathCounts <- NCDeathCounts[2:length(NCDeathCounts$Day), ]
+
+#Change treatment to a character for it to work in arrange function below 
+NCDeathCounts$Treatment <- as.character(NCDeathCounts$Treatment)
+
+#Arrange by Treatment and day so that we can subtract each row from the one above it
+NCDeathCounts <- NCDeathCounts %>%
+  arrange(Treatment, Day)
+```
+
+
+```{r}
+#Add a column with the number of individuals in each treatment to start with 
+StartingSum <- summarySE(data = NCSurv, measurevar = "Mass.pupa", groupvars = "Treatment")
+StartingSum
+
+#Hard coded the total number of individuals in each treatment group
+NCDeathCounts$Starting <- rep(c(125, 125, 72, 85, 129), each = 52)
+
+#Doing a proprotion of individuals that died each day
+NCDeathCounts$DayProp <- NCDeathCounts$Deaths/ NCDeathCounts$Starting
+ 
+#Do the proportion of individuals alive at the end of each day for each treatment group
+NCDeathCounts$PropSurv <- 1
+
+
+NC16DeathCounts <- NCDeathCounts[NCDeathCounts$Treatment ==16, ]
+for (i in 1:length(NC16DeathCounts$PropSurv)) {
+  NC16DeathCounts[i, 6] = 1 - sum(NC16DeathCounts[1:i, "DayProp"])}
+
+NC21DeathCounts <- NCDeathCounts[NCDeathCounts$Treatment ==21, ]
+for (i in 1:length(NC21DeathCounts$PropSurv)) {
+  NC21DeathCounts[i, 6] = 1 - sum(NC21DeathCounts[1:i, "DayProp"])}
+
+NC26DeathCounts <- NCDeathCounts[NCDeathCounts$Treatment ==26, ]
+for (i in 1:length(NC26DeathCounts$PropSurv)) {
+  NC26DeathCounts[i, 6] = 1 - sum(NC26DeathCounts[1:i, "DayProp"])}
+
+NC30DeathCounts <- NCDeathCounts[NCDeathCounts$Treatment ==30, ]
+for (i in 1:length(NC30DeathCounts$PropSurv)) {
+  NC30DeathCounts[i, 6] = 1 - sum(NC30DeathCounts[1:i, "DayProp"])}
+
+NC34DeathCounts <- NCDeathCounts[NCDeathCounts$Treatment ==34, ]
+for (i in 1:length(NC34DeathCounts$PropSurv)) {
+  NC34DeathCounts[i, 6] = 1 - sum(NC34DeathCounts[1:i, "DayProp"])}
+
+#Bind all of the treatment groups together
+output <- rbind(NC16DeathCounts, NC21DeathCounts)
+output <- rbind(output, NC26DeathCounts)
+output<- rbind(output, NC30DeathCounts)
+NCDeathCounts <- rbind(output, NC34DeathCounts)
+```
+
+```{r}
+#LETS PLOT IT
+
+NCDeathPlot <- ggplot(data = NCDeathCounts, aes(x = Day, y = PropSurv, group = Treatment, color = Treatment, linetype = Treatment)) + 
+  theme_bw() + 
+  geom_line(size = 1.5) +
+  labs(x = "Time (Days)", y = "Proportion Surviving", group = "Mean Temperature °C", color = "Mean Temperature (°C)", linetype = "Mean Temperature (°C)")+
+  ylim(0,1)+ 
+  scale_color_manual(values = c("purple", "deepskyblue", "chartreuse2", "darkgoldenrod1", "firebrick2"))+
+  scale_linetype_manual(values = c("solid", "dashed", "longdash", "dotdash", "twodash"))+
+  font("xy", size = 15)+
+  font("x.text", size = 12)+
+  font("y.text", size = 12)+
+  font("legend.title", size = 12)+
+  font("legend.text", size = 12)
+
+NCDeathPlot
+
+```
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Thesis/NCTimeDeathPlot1.png", NCDeathPlot, width = 8, height = 5)
+```
+
+## Now lets do it for california
+
+```{r}
+CASurv <- NewComb[NewComb$Population == "CA", ] 
+CASurv$Treatment <- as.factor(CASurv$Treatment)
+
+deaths<-CASurv %>%
+  filter(!is.na(Age.death))
+
+#survivors <- NCSurv %>%
+  #filter(is.na(Age.death))
+```
+
+```{r}
+# Get unique treatments
+treatments <- unique(CASurv$Treatment)
+
+# Initialize an empty data frame to store results
+CADeathCounts <- data.frame(Day = 0, Treatment = as.factor(0), Deaths = 0)
+
+# Loop through each treatment
+for (treat in treatments) {
+  # Create new dataframe for each treatment
+  treat_data <- deaths[deaths$Treatment == treat, ]
+  result_df <- data.frame(Day = 1:max(deaths$Age.death), Treatment = treat, Deaths = 0)
+      
+  # Loop through each day in that treatment
+  for (day in result_df$Day) {
+    # Get a death count for each day and add to the result_df 
+    D.count = sum(treat_data$Age.death == day)
+    result_df[day, 3] = D.count
+    }
+
+  # Append result_df to the main data frame
+  CADeathCounts <- rbind(CADeathCounts, result_df)
+  
+}
+```
+
+
+```{r}
+# Add a day 0 row for each treatment 
+Day0 <- data.frame(Day = 0, Treatment = c(16,21,26,30,34), Deaths = 0)
+CADeathCounts <-rbind(CADeathCounts, Day0)
+
+#Get rid of the first row which was used to create the dataframe
+CADeathCounts <- CADeathCounts[2:length(CADeathCounts$Day), ]
+
+#Change treatment to a character for it to work in arrange function below 
+CADeathCounts$Treatment <- as.character(CADeathCounts$Treatment)
+
+#Arrange by Treatment and day so that we can subtract each row from the one above it
+CADeathCounts <- CADeathCounts %>%
+  arrange(Treatment, Day)
+```
+
+
+```{r}
+#Add a column with the number of individuals in each treatment to start with 
+StartingSum <- summarySE(data = CASurv, measurevar = "Mass.pupa", groupvars = "Treatment")
+StartingSum
+
+#Hard coded the total number of individuals in each treatment group
+CADeathCounts$Starting <- rep(c(80, 93, 59, 97, 58), each = 45)
+
+#Doing a proprotion of individuals that died each day
+CADeathCounts$DayProp <- CADeathCounts$Deaths/ CADeathCounts$Starting
+ 
+#Do the proportion of individuals alive at the end of each day for each treatment group
+CADeathCounts$PropSurv <- 1
+
+
+CA16DeathCounts <- CADeathCounts[CADeathCounts$Treatment ==16, ]
+for (i in 1:length(CA16DeathCounts$PropSurv)) {
+  CA16DeathCounts[i, 6] = 1 - sum(CA16DeathCounts[1:i, "DayProp"])}
+
+CA21DeathCounts <- CADeathCounts[CADeathCounts$Treatment ==21, ]
+for (i in 1:length(CA21DeathCounts$PropSurv)) {
+  CA21DeathCounts[i, 6] = 1 - sum(CA21DeathCounts[1:i, "DayProp"])}
+
+CA26DeathCounts <- CADeathCounts[CADeathCounts$Treatment ==26, ]
+for (i in 1:length(CA26DeathCounts$PropSurv)) {
+  CA26DeathCounts[i, 6] = 1 - sum(CA26DeathCounts[1:i, "DayProp"])}
+
+CA30DeathCounts <- CADeathCounts[CADeathCounts$Treatment ==30, ]
+for (i in 1:length(CA30DeathCounts$PropSurv)) {
+  CA30DeathCounts[i, 6] = 1 - sum(CA30DeathCounts[1:i, "DayProp"])}
+
+CA34DeathCounts <- CADeathCounts[CADeathCounts$Treatment ==34, ]
+for (i in 1:length(CA34DeathCounts$PropSurv)) {
+  CA34DeathCounts[i, 6] = 1 - sum(CA34DeathCounts[1:i, "DayProp"])}
+
+#Bind all of the treatment groups together
+output <- rbind(CA16DeathCounts, CA21DeathCounts)
+output <- rbind(output, CA26DeathCounts)
+output<- rbind(output, CA30DeathCounts)
+CADeathCounts <- rbind(output, CA34DeathCounts)
+```
+
+```{r}
+#LETS PLOT IT
+
+CADeathPlot <- ggplot(data = CADeathCounts, aes(x = Day, y = PropSurv, group = Treatment, color = Treatment, linetype= Treatment)) + 
+  theme_bw() + 
+  geom_line(size = 1.5) +
+  labs(x = "Time (Days)", y = "Proportion Surviving", group = "Treatment", color = "Mean Temperature (°C)", linetype = "Mean Temperature (°C)")+
+  ylim(0,1)+ 
+  scale_color_manual(values = c("purple", "deepskyblue", "chartreuse2", "darkgoldenrod1", "firebrick2"))+
+  scale_linetype_manual(values = c("solid", "dashed", "longdash", "dotdash", "twodash"))+
+  font("xy", size = 15)+
+  font("x.text", size = 12)+
+  font("y.text", size = 12)+
+  font("legend.title", size = 12)+
+  font("legend.text", size = 12)
+
+CADeathPlot
+
+```
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Thesis/CATimeDeathPlot1.png", CADeathPlot, width = 8, height = 5)
+```
+
+
+## Finally lets do the same for washington 
+
+```{r}
+WASurv <- NewComb[NewComb$Population == "WA", ] 
+WASurv$Treatment <- as.factor(WASurv$Treatment)
+
+deaths<-WASurv %>%
+  filter(!is.na(Age.death))
+
+#survivors <- NCSurv %>%
+  #filter(is.na(Age.death))
+```
+
+```{r}
+# Get unique treatments
+treatments <- unique(WASurv$Treatment)
+
+# Initialize an empty data frame to store results
+WADeathCounts <- data.frame(Day = 0, Treatment = as.factor(0), Deaths = 0)
+
+# Loop through each treatment
+for (treat in treatments) {
+  # Create new dataframe for each treatment
+  treat_data <- deaths[deaths$Treatment == treat, ]
+  result_df <- data.frame(Day = 1:max(deaths$Age.death), Treatment = treat, Deaths = 0)
+      
+  # Loop through each day in that treatment
+  for (day in result_df$Day) {
+    # Get a death count for each day and add to the result_df 
+    D.count = sum(treat_data$Age.death == day)
+    result_df[day, 3] = D.count
+    }
+
+  # Append result_df to the main data frame
+  WADeathCounts <- rbind(WADeathCounts, result_df)
+  
+}
+```
+
+
+```{r}
+# Add a day 0 row for each treatment 
+Day0 <- data.frame(Day = 0, Treatment = c(16,21,26,30,34), Deaths = 0)
+WADeathCounts <-rbind(WADeathCounts, Day0)
+
+#Get rid of the first row which was used to create the dataframe
+WADeathCounts <- WADeathCounts[2:length(WADeathCounts$Day), ]
+
+#Change treatment to a character for it to work in arrange function below 
+WADeathCounts$Treatment <- as.character(WADeathCounts$Treatment)
+
+#Arrange by Treatment and day so that we can subtract each row from the one above it
+WADeathCounts <- WADeathCounts %>%
+  arrange(Treatment, Day)
+```
+
+
+```{r}
+#Add a column with the number of individuals in each treatment to start with 
+StartingSum <- summarySE(data = WASurv, measurevar = "Mass.pupa", groupvars = "Treatment")
+StartingSum
+
+#Hard coded the total number of individuals in each treatment group
+WADeathCounts$Starting <- rep(c(50, 50, 50, 49, 51), each = 64)
+
+#Doing a proprotion of individuals that died each day
+WADeathCounts$DayProp <- WADeathCounts$Deaths/ WADeathCounts$Starting
+ 
+#Do the proportion of individuals alive at the end of each day for each treatment group
+WADeathCounts$PropSurv <- 1
+
+
+WA16DeathCounts <- WADeathCounts[WADeathCounts$Treatment ==16, ]
+for (i in 1:length(WA16DeathCounts$PropSurv)) {
+  WA16DeathCounts[i, 6] = 1 - sum(WA16DeathCounts[1:i, "DayProp"])}
+
+WA21DeathCounts <- WADeathCounts[WADeathCounts$Treatment ==21, ]
+for (i in 1:length(WA21DeathCounts$PropSurv)) {
+  WA21DeathCounts[i, 6] = 1 - sum(WA21DeathCounts[1:i, "DayProp"])}
+
+WA26DeathCounts <- WADeathCounts[WADeathCounts$Treatment ==26, ]
+for (i in 1:length(WA26DeathCounts$PropSurv)) {
+  WA26DeathCounts[i, 6] = 1 - sum(WA26DeathCounts[1:i, "DayProp"])}
+
+WA30DeathCounts <- WADeathCounts[WADeathCounts$Treatment ==30, ]
+for (i in 1:length(WA30DeathCounts$PropSurv)) {
+  WA30DeathCounts[i, 6] = 1 - sum(WA30DeathCounts[1:i, "DayProp"])}
+
+WA34DeathCounts <- WADeathCounts[WADeathCounts$Treatment ==34, ]
+for (i in 1:length(WA34DeathCounts$PropSurv)) {
+  WA34DeathCounts[i, 6] = 1 - sum(WA34DeathCounts[1:i, "DayProp"])}
+
+#Bind all of the treatment groups together
+output <- rbind(WA16DeathCounts, WA21DeathCounts)
+output <- rbind(output, WA26DeathCounts)
+output<- rbind(output, WA30DeathCounts)
+WADeathCounts <- rbind(output, WA34DeathCounts)
+```
+
+```{r}
+#LETS PLOT IT
+
+WADeathPlot <- ggplot(data = WADeathCounts, aes(x = Day, y = PropSurv, group = Treatment, color = Treatment, linetype = Treatment)) + 
+  theme_bw() + 
+  geom_line(size = 1.5) +
+  labs(x = "Time (Days)", y = "Proportion Surviving", group = "Treatment", color = "Mean Temperature (°C)", linetype = "Mean Temperature (°C)")+
+  ylim(0,1)+ 
+  scale_color_manual(values = c("purple", "deepskyblue", "chartreuse2", "darkgoldenrod1", "firebrick2"))+
+  scale_linetype_manual(values = c("solid", "dashed", "longdash", "dotdash", "twodash"))+
+  font("xy", size = 15)+
+  font("x.text", size = 12)+
+  font("y.text", size = 12)+
+  font("legend.title", size = 12)+
+  font("legend.text", size = 12)+
+  guides(color = guide_legend(override.aes = list(size = 15)))
+
+WADeathPlot
+
+```
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Thesis/WATimeDeathPlot1.png", WADeathPlot, width = 8, height = 5)
+```
 
