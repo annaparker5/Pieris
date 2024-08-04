@@ -3,15 +3,6 @@ title: "Curve Fitting"
 output: html_notebook
 ---
 
-Roadmap: 
-
-0. Install packages and load in data
-1. Redo data manipulation
-2. Fit dev rate curve to only successful pupations hourly
-3. Fit dev rate curve to all larval-pupal intermediates and successful pupations hourly
-4. Fit dev rate curve to all larval-pupal intermediates and successful pupations daily
-
-
 #0. Load in packages and data
 
 ```{r}
@@ -28,14 +19,17 @@ library(ggpubr)
 ```
 
 ```{r}
-Larvalcomb <- read.csv( "~/Desktop/GitHub/Pieris/NEWCombData.csv", header = TRUE)
+Larvalcomb <- read.csv( "~/Desktop/GitHub/Pieris/LarvalCombData.csv", header = TRUE)
 
 Larvalcomb$Temperature <- Larvalcomb$Treatment
 Larvalcomb$Treatment <- as.factor(Larvalcomb$Treatment)
 Larvalcomb$Larv.Dev.Rate <- 1/Larvalcomb$Age.pupa
+
+Pupalcomb <- read.csv("~/Desktop/Github/Pieris/PupalTempData.csv")
+Rearingcomb <- read.csv("~/Desktop/Github/Pieris/RearingTempPupalData.csv")
 ```
 
-# 1. Redo data analysis 
+# 1. Redo data analysis for larval exerperiment
 
 ## Pupal mass
 
@@ -59,20 +53,20 @@ pupalmeans <- pupalmeans %>%
 ### Mean dev time and SE (EXCLUDING THIS FOR NOW)
 
 ```{r}
-pupaltimemeans <- summarySE(data = data[data$Surv.pupa == "Y", ], measurevar = "Time.pupa", groupvars = c("Mean.Temp", "PupateOk"))
+#pupaltimemeans <- summarySE(data = data[data$Surv.pupa == "Y", ], measurevar = "Time.pupa", groupvars = c("Mean.Temp", "PupateOk"))
 
-pupaltimemeans
+#pupaltimemeans
 
-pupaltimemeans$Time.se <- pupaltimemeans$se
+#pupaltimemeans$Time.se <- pupaltimemeans$se
 
-pupaltimemeans <- pupaltimemeans %>%
-  select(Mean.Temp, PupateOk, N, Time.pupa, Time.se)
+#pupaltimemeans <- pupaltimemeans %>%
+  #select(Mean.Temp, PupateOk, N, Time.pupa, Time.se)
 ```
 
 ### Merge together (EXCLUDING THIS FOR NOW)
 
 ```{r}
-pupalmeans <- merge(pupalmeans, pupaltimemeans, by = c("Mean.Temp", "PupateOk", "N"))
+#pupalmeans <- merge(pupalmeans, pupaltimemeans, by = c("Mean.Temp", "PupateOk", "N"))
 ```
 
 
@@ -97,62 +91,6 @@ pupalmeans <- merge(pupalmeans, pupalratemeans, by = c("Temperature", "Populatio
 pupalmeans
 ```
 
-## Pupal means combined with LPI and pupa (EXCLUDING FOR NOW)
-
-
-```{r}
-pupalmeanstotal <- summarySE(data = data[data$Surv.pupa == "Y", ], measurevar = "Mass.pupa", groupvars = c("Mean.Temp"))
-
-pupalmeanstotal
-
-pupalmeanstotal$Mass.se <- pupalmeanstotal$se
-
-pupalmeanstotal <- pupalmeanstotal %>%
-  select(Mean.Temp, N, Mass.pupa, Mass.se)
-
-
-```
-
-### Mean dev time and SE (EXCLUDING FOR NOW)
-
-```{r}
-pupaltimemeanstotal <- summarySE(data = data[data$Surv.pupa == "Y", ], measurevar = "Time.pupa", groupvars = c("Mean.Temp"))
-
-pupaltimemeanstotal
-
-pupaltimemeanstotal$Time.se <- pupaltimemeanstotal$se
-
-pupaltimemeanstotal <- pupaltimemeanstotal %>%
-  select(Mean.Temp, N, Time.pupa, Time.se)
-```
-
-### Merge together (EXCLUDING FOR NOW)
-
-```{r}
-pupalmeanstotal <- merge(pupalmeanstotal, pupaltimemeanstotal, by = c("Mean.Temp", "N"))
-```
-
-
-## Add in development rate (EXCLUDING FOR NOW)
-
-```{r}
-pupalratemeanstotal <- summarySE(data = data[data$Surv.pupa == "Y", ], measurevar = "Dev.Rate", groupvars = c("Mean.Temp"))
-
-pupalratemeanstotal
-
-pupalratemeanstotal$Rate.se <- pupalratemeanstotal$se
-
-pupalratemeanstotal <- pupalratemeanstotal %>%
-  select(Mean.Temp, N, Dev.Rate, Rate.se)
-```
-
-
-```{r}
-pupalmeanstotal <- merge(pupalmeanstotal, pupalratemeanstotal, by = c("Mean.Temp", "N"))
-```
-
-
-
 ## Survival to pupation vs temp treatment 
 
 1. Create summary table
@@ -163,9 +101,9 @@ pupalmeanstotal <- merge(pupalmeanstotal, pupalratemeanstotal, by = c("Mean.Temp
 ### 1. Create summary table
 
 ```{r}
-survpercsum <- summarySE(data = data, 
+survpercsum <- summarySE(data = Larvalcomb, 
                          measurevar = "Mass.pupa", 
-                         groupvars = c("Mean.Temp", "Surv.pupa"))
+                         groupvars = c("Temperature", "Surv.pupa", "Population"))
 ```
 
 ### 2. Create blank table
@@ -846,6 +784,68 @@ AllWeibull
 ggsave("~/Desktop/GitHub/Pieris/Thesis/AllPopsWeibull.png", AllWeibull, width = 8, height = 5)
 ```
 
+### Making a new larval weibull graph which includes the april and august temperatures as a histogram
+
+```{r}
+histtemps <- tibble(Mean.Temp = seq((-5), 50, length.out = 200))
+
+solopreds <- augment(NCfitmodrezende, newdata = histtemps)
+```
+
+```{r}
+weibullwithhist <-ggplot(data = solopreds) +
+  geom_line(aes(x = temp, y = .fitted), data = AllPopWeibull[AllPopWeibull$Population == "NC", ], color = "orange", linetype = "dashed", size = 1) +
+  geom_line(aes(x = temp, y = .fitted), data = AllPopWeibull[AllPopWeibull$Population == "WA", ], color = "lime green", linetype = "dotted", size = 1) +
+  geom_line(aes(x = temp, y = .fitted), data = AllPopWeibull[AllPopWeibull$Population == "CA", ], color = "#1E88E5", linetype = "solid", size = 1) +
+  geom_point(aes(x = Temperature,y = Larv.Dev.Rate), data = pupalmeans[pupalmeans$Population == "NC",], color = "orange", shape = 17, size = 3) +
+  geom_point(aes(x = Temperature,y = Larv.Dev.Rate), data = pupalmeans[pupalmeans$Population == "WA",], color = "lime green", shape = 15, size = 3) +
+  geom_point(aes(x = Temperature,y = Larv.Dev.Rate), data = pupalmeans[pupalmeans$Population == "CA",], color = "#1E88E5", shape = 19, size = 3) +
+  theme_bw() +
+  labs(x = 'Temperature (ºC)') +
+  scale_y_continuous(name = "Development Rate and Relative Temperature Frequency")+ 
+                     #sec.axis = sec_axis(trans = ~., name = "Relative Temperature Frequency")) + 
+  geom_histogram(data = apriltemps, aes(x = Temperature, y = ..count.. / 5000), color = "lime green", 
+                 fill = "lime green", alpha = .5) + 
+  geom_histogram(data = augusttemps, aes(x = Temperature, y = ..count.. / 5000), color = "turquoise", 
+                 fill = "turquoise", alpha = .5) 
+
+
+weibullwithhist
+```
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Figures/AllPopweibullwithhist.png", weibullwithhist, width = 8, height = 5)
+```
+
+
+```{r}
+rezendeover0 <- AllPopRezende[AllPopRezende$.fitted>0,]
+```
+
+
+```{r}
+rezendewithhist <-ggplot(data = solopreds) +
+  geom_line(aes(x = temp, y = .fitted), data = rezendeover0[rezendeover0$Population == "NC", ], color = "orange", linetype = "dashed", size = 1) +
+  geom_line(aes(x = temp, y = .fitted), data = rezendeover0[rezendeover0$Population == "WA", ], color = "lime green", linetype = "dotted", size = 1) +
+  geom_line(aes(x = temp, y = .fitted), data = rezendeover0[rezendeover0$Population == "CA", ], color = "#1E88E5", linetype = "solid", size = 1) +
+  geom_point(aes(x = Temperature,y = Larv.Dev.Rate), data = pupalmeans[pupalmeans$Population == "NC",], color = "orange", shape = 17, size = 3) +
+  geom_point(aes(x = Temperature,y = Larv.Dev.Rate), data = pupalmeans[pupalmeans$Population == "WA",], color = "lime green", shape = 15, size = 3) +
+  geom_point(aes(x = Temperature,y = Larv.Dev.Rate), data = pupalmeans[pupalmeans$Population == "CA",], color = "#1E88E5", shape = 19, size = 3) +
+  theme_bw() +
+  labs(x = 'Temperature (ºC)', y= "Development Rate and Relative Temperature Frequency",
+    sec.axis = sec_axis(trans = ~., name = "Relative Temperature Frequency")) + 
+  geom_histogram(data = apriltemps, aes(x = Temperature, y = ..count.. / 5000), color = "lime green", 
+                 fill = "lime green", alpha = .5) + 
+  geom_histogram(data = augusttemps, aes(x = Temperature, y = ..count.. / 5000), color = "turquoise", 
+                 fill = "turquoise", alpha = .5) +
+  xlim(-5, 50)
+
+
+rezendewithhist
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Figures/AllPopRezendewithhist.png", rezendewithhist, width = 8, height = 5)
+```
 
 ```{r}
 AllRezende <- ggplot(AllPopRezende, aes(temp, rate, group = Population, color = Population, shape = Population, linetype = Population)) +
@@ -876,9 +876,9 @@ ggsave("~/Desktop/GitHub/Pieris/Thesis/AllPopsRezende.png", AllRezende, width = 
 ## Load in our April and August temp data
 
 ```{r}
-april <- read.csv("~/Desktop/GitHub/Pieris/North_Carolina/NC_Larval_and_Realistic_Temps/Data/simulated_36_-79_2_d_2022_4_1_5_31_inbetween.csv", header = TRUE)
+april <- read.csv("~/Desktop/GitHub/Pieris/Realistic_Temp_Data/April_temps.csv", header = TRUE)
 
-august <- read.csv("~/Desktop/GitHub/Pieris/North_Carolina/NC_Larval_and_Realistic_Temps/Data/simulated_36_-79_2_d_2022_8_1_8_31_inbetween.csv", header = TRUE)
+august <- read.csv("~/Desktop/GitHub/Pieris/Realistic_Temp_Data/August_temps.csv", header = TRUE)
 ```
 
 ## Create our output datafile
@@ -897,7 +897,7 @@ augusttemps <- tibble(Temperature = augusthourly$V1)
 ```
 
 
-## TANGENT: Graph temp distributions compared to weibull curve (Not doing yet)
+## TANGENT: Graph temp distributions compared to weibull curve
 
 ```{r}
 histtemps <- tibble(Mean.Temp = seq((-5), 50, length.out = 200))
@@ -1053,7 +1053,7 @@ for(i in 1:length(augustpredstotal$.fitted)){
 ```
 
 
-# 4. Fit all to daily temp means
+# 3. Fit all to daily temp means
 
 ```{r}
 aprdailymeans <- data.frame(Mean.Temp = 0)
@@ -1149,140 +1149,136 @@ Right on the money this time
 
 
 
-# 3. Survival curves
+
+# 4. Pupal development rate models for the three populations 
+
+
+## Development rate
 
 ```{r}
-survdata$Mean.Temp <- as.character(survdata$Mean.Temp)
-survdata$Mean.Temp <- as.numeric(survdata$Mean.Temp)
+Pupalcomb$Pup.Dev.Rate <- 1/Pupalcomb$DaysPtoE
 ```
 
 
 ```{r}
-s <- as.data.frame(cbind(survdata$Mean.Temp, survdata$surv.perc))
+adultratemeans <- summarySE(data = Pupalcomb[Pupalcomb$Surv.eclose == "Yes" & !is.na(Pupalcomb$Pup.Dev.Rate == TRUE), ], measurevar = "Pup.Dev.Rate", groupvars = c("Treatment", "Population"))
 
-colnames(s) <- c("temp", "rate")
+adultratemeans$Rate.se <- adultratemeans$se
+adultratemeans$Rate.N <-adultratemeans$N
+
+adultratemeans <- adultratemeans %>%
+  select(Treatment, Population, Rate.N, Pup.Dev.Rate, Rate.se)
+```
+
+
+## Survival to pupation vs temp treatment 
+
+1. Create summary table
+2. Create blank table for input
+3. Hard code input
+4. Graph it
+
+### 1. Create summary table
+
+```{r}
+survpercsum <- summarySE(data = Pupalcomb, 
+                         measurevar = "Mass.pupa", 
+                         groupvars = c("Temperature", "Surv.pupa", "Population"))
+```
+
+### 2. Create blank table
+
+```{r}
+survdata <- data.frame(Mean.Temp = c(16, 21, 26, 30, 34), 
+                       surv.perc = 0, 
+                       group = 1)
+
+survdata$Mean.Temp <- as.factor(survdata$Mean.Temp)
+survdata$group = as.factor(survdata$group)
+```
+
+### 3. Hard code it
+
+```{r}
+survdata[1, 2] <- survpercsum[2, 3] / (survpercsum[2, 3] + survpercsum[1, 3])
+survdata[2, 2] <- survpercsum[4, 3] / (survpercsum[4, 3] + survpercsum[3, 3])
+survdata[3, 2] <- survpercsum[6, 3] / (survpercsum[6, 3] + survpercsum[5, 3])
+survdata[4, 2] <- survpercsum[8, 3] / (survpercsum[8, 3] + survpercsum[7, 3])
+survdata[5, 2] <- survpercsum[10, 3] / (survpercsum[10, 3] + survpercsum[9, 3])
+```
+
+# 2. Fit dev rate curve just for successful pupa and intermediates using rTPC
+
+
+Change temp to not be a factor
+```{r}
+#pupalmeans$Mean.Temp <- as.character(pupalmeans$Mean.Temp)
+##pupalmeans$Mean.Temp <- as.numeric(pupalmeans$Mean.Temp)
+
+#pupalmeansyes <- pupalmeans[pupalmeans$PupateOk == "Y", ]
+```
+
+
+## For NC first...
+Our object is called `r pupalmeans`. 
+
+```{r}
+NCadultmeans <-adultratemeans[adultratemeans$Population == "NC", ]
 ```
 
 
 ```{r}
-s_fits <- nest(s, data = c(temp, rate)) %>%
-  mutate(beta = map(data, ~nls_multstart(rate~beta_2012(temp = temp, a, b, c, d, e),
+fitmodgaussNC <- nls_multstart(data = NCadultmeans[, c(1, 4)], 
+                             Pup.Dev.Rate ~ modifiedgaussian_2006(temp = Treatment, rmax, topt, a, b), 
+                             iter = c(5, 5, 5, 5), 
+                             start_lower = get_start_vals(NCadultmeans$Treatment, NCadultmeans$Pup.Dev.Rate,
+                                                          model_name = "modifiedgaussian_2006") - 10,
+                             start_upper = get_start_vals(NCadultmeans$Treatment, NCadultmeans$Pup.Dev.Rate,
+                                                          model_name = "modifiedgaussian_2006") + 10, 
+                             lower = get_lower_lims(NCadultmeans$Treatment, NCadultmeans$Pup.Dev.Rate,
+                                                    model_name = "modifiedgaussian_2006"), 
+                             upper = get_upper_lims(NCadultmeans$Treatment, NCadultmeans$Pup.Dev.Rate,
+                                                    model_name = "modifiedgaussian_2006")) 
+```
+
+```{r}
+summary(fitmodgaussNC)
+```
+
+## Modifying Lauren Buckley's code
+
+
+```{r}
+NCd <- as.data.frame(cbind(NCadultmeans$Treatment, NCadultmeans$Pup.Dev.Rate))
+
+colnames(NCd) <- c("temp", "rate")
+```
+
+
+```{r}
+d_fits <- nest(NCd, data = c(temp, rate)) %>%
+  mutate(modified_gaussian = map(data, ~nls_multstart(rate~modifiedgaussian_2006(temp = temp, rmax, topt, a, b),
                                          data = .x,
-                                         iter = c(4,4,4,4,4),
+                                         iter = c(4,4,4,4),
                                          start_lower = get_start_vals(.x$temp, .x$rate, 
-                                                                      model_name = 'beta_2012') - 10,
+                                                                      model_name = 'modifiedgaussian_2006') - 10,
                                          start_upper = get_start_vals(.x$temp, .x$rate, 
-                                                                      model_name = 'beta_2012') + 10,
-                                         lower = get_lower_lims(.x$temp, .x$rate, model_name = 'beta_2012'),
-                                         upper = get_upper_lims(.x$temp, .x$rate, model_name = 'beta_2012'),
+                                                                      model_name = 'modifiedgaussian_2006') + 10,
+                                         lower = get_lower_lims(.x$temp, .x$rate, model_name = 'modifiedgaussian_2006'),
+                                         upper = get_upper_lims(.x$temp, .x$rate, model_name = 'modifiedgaussian_2006'),
                                          supp_errors = 'Y',
                                          convergence_count = FALSE)),
-         
-         boatman = map(data, ~nls_multstart(rate~boatman_2017(temp = temp, rmax, tmin, tmax, a, b),
+         rezende = map(data, ~nls_multstart(rate~rezende_2019(temp = temp, q10, a, b, c),
                                              data = .x,
-                                             iter = c(4,4,4,4,4),
-                                             start_lower = get_start_vals(.x$temp, .x$rate, model_name = 'boatman_2017') - 10,
-                                             start_upper = get_start_vals(.x$temp, .x$rate, model_name = 'boatman_2017') + 10,
-                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'boatman_2017'),
-                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'boatman_2017'),
+                                             iter = c(4,4,4,4),
+                                             start_lower = get_start_vals(.x$temp, .x$rate, model_name = 'rezende_2019') - 10,
+                                             start_upper = get_start_vals(.x$temp, .x$rate, model_name = 'rezende_2019') + 10,
+                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'rezende_2019'),
+                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'rezende_2019'),
                                              supp_errors = 'Y',
                                              convergence_count = FALSE)),
          
-         delong =  map(data, ~nls_multstart(rate~delong_2017(temp = temp, c, eb, ef, tm, ehc),
-                                             data = .x,
-                                             iter = c(4,4,4,4,4),
-                                             start_lower = get_start_vals(.x$temp, .x$rate, 
-                                                                          model_name = 'delong_2017') - 10,
-                                             start_upper = get_start_vals(.x$temp, .x$rate, 
-                                                                          model_name = 'delong_2017') + 10,
-                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'delong_2017'),
-                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'delong_2017'),
-                                             supp_errors = 'Y',
-                                             convergence_count = FALSE)),
-         
-         flinn = map(data, ~nls_multstart(rate~flinn_1991(temp = temp, a,b,c),
-                                            data = .x,
-                                            iter = c(4,4,4),
-                                            start_lower = get_start_vals(.x$temp, .x$rate, model_name = 'flinn_1991') - 10,
-                                            start_upper = get_start_vals(.x$temp, .x$rate, model_name = 'flinn_1991') + 10,
-                                            lower = get_lower_lims(.x$temp, .x$rate, model_name = 'flinn_1991'),
-                                            upper = get_upper_lims(.x$temp, .x$rate, model_name = 'flinn_1991'),
-                                            supp_errors = 'Y',
-                                            convergence_count = FALSE)),
-         
-          gaussian =  map(data, ~nls_multstart(rate~gaussian_1987(temp = temp, rmax, topt, a),
-                                             data = .x,
-                                             iter = c(4,4,4),
-                                             start_lower = get_start_vals(.x$temp, .x$rate, 
-                                                                          model_name = 'gaussian_1987') - 10,
-                                             start_upper = get_start_vals(.x$temp, .x$rate, 
-                                                                          model_name = 'gaussian_1987') + 10,
-                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'gaussian_1987'),
-                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'gaussian_1987'),
-                                             supp_errors = 'Y',
-                                             convergence_count = FALSE)), 
-         
-         johnlew =  map(data, ~nls_multstart(rate~johnsonlewin_1946(temp = temp, rO, e, eh, topt),
-                                             data = .x,
-                                             iter = c(4,4,4,4),
-                                             start_lower = get_start_vals(.x$temp, .x$rate, 
-                                                                          model_name = 'johnsonlewin_1946') - 10,
-                                             start_upper = get_start_vals(.x$temp, .x$rate, 
-                                                                          model_name = 'johnsonlewin_1946') + 10,
-                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'johnsonlewin_1946'),
-                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'johnsonlewin_1946'),
-                                             supp_errors = 'Y',
-                                             convergence_count = FALSE)),
-         
-         modified_gauss =  map(data, ~nls_multstart(rate~modifiedgaussian_2006(temp = temp, rmax, topt, a, b),
-                                             data = .x,
-                                             iter = c(4,4,4,4),
-                                             start_lower = get_start_vals(.x$temp, .x$rate, 
-                                                                          model_name = 'modifiedgaussian_2006') - 10,
-                                             start_upper = get_start_vals(.x$temp, .x$rate, 
-                                                                          model_name = 'modifiedgaussian_2006') + 10,
-                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'modifiedgaussian_2006'),
-                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'modifiedgaussian_2006'),
-                                             supp_errors = 'Y',
-                                             convergence_count = FALSE)),   
-         
-         oneill =  map(data, ~nls_multstart(rate~oneill_1972(temp = temp, rmax, ctmax, topt, q10),
-                                             data = .x,
-                                             iter = c(4,4,4,4),
-                                             start_lower = get_start_vals(.x$temp, .x$rate, 
-                                                                          model_name = 'oneill_1972') - 10,
-                                             start_upper = get_start_vals(.x$temp, .x$rate, 
-                                                                          model_name = 'oneill_1972') + 10,
-                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'oneill_1972'),
-                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'oneill_1972'),
-                                             supp_errors = 'Y',
-                                             convergence_count = FALSE)), 
-         
-         pawar =  map(data, ~nls_multstart(rate~pawar_2018(temp = temp, r_tref, e, eh, topt, tref = 20),
-                                             data = .x,
-                                             iter = c(4,4,4,4),
-                                             start_lower = get_start_vals(.x$temp, .x$rate, 
-                                                                          model_name = 'pawar_2018') - 10,
-                                             start_upper = get_start_vals(.x$temp, .x$rate, 
-                                                                          model_name = 'pawar_2018') + 10,
-                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'pawar_2018'),
-                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'pawar_2018'),
-                                             supp_errors = 'Y',
-                                             convergence_count = FALSE)), 
-         
-         ratkowsky =  map(data, ~nls_multstart(rate~ratkowsky_1983(temp = temp, tmin, tmax, a, b),
-                                             data = .x,
-                                             iter = c(4,4,4,4),
-                                             start_lower = get_start_vals(.x$temp, .x$rate, 
-                                                                          model_name = 'ratkowsky_1983') - 10,
-                                             start_upper = get_start_vals(.x$temp, .x$rate, 
-                                                                          model_name = 'ratkowsky_1983') + 10,
-                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'ratkowsky_1983'),
-                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'ratkowsky_1983'),
-                                             supp_errors = 'Y',
-                                             convergence_count = FALSE)), 
-         
-         sharpeschool =  map(data, ~nls_multstart(rate~sharpeschoolfull_1981(temp = temp, r_tref, e, el, tl, eh, th, tref = 20),
+         sharpeschool =  map(data, ~nls_multstart(rate~sharpeschoolfull_1981(temp = temp, r_tref, e, el, tl, eh, th, tref=29),
                                              data = .x,
                                              iter = c(4,4,4,4,4,4),
                                              start_lower = get_start_vals(.x$temp, .x$rate, 
@@ -1292,52 +1288,40 @@ s_fits <- nest(s, data = c(temp, rate)) %>%
                                              lower = get_lower_lims(.x$temp, .x$rate, model_name = 'sharpeschoolfull_1981'),
                                              upper = get_upper_lims(.x$temp, .x$rate, model_name = 'sharpeschoolfull_1981'),
                                              supp_errors = 'Y',
-                                             convergence_count = FALSE)),     
-         
-         weibull =  map(data, ~nls_multstart(rate~weibull_1995(temp = temp, a, topt, b, c),
-                                             data = .x,
-                                             iter = c(4,4,4,4),
-                                             start_lower = get_start_vals(.x$temp, .x$rate, 
-                                                                          model_name = 'weibull_1995') - 10,
-                                             start_upper = get_start_vals(.x$temp, .x$rate, 
-                                                                          model_name = 'weibull_1995') + 10,
-                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'weibull_1995'),
-                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'weibull_1995'),
-                                             supp_errors = 'Y',
-                                             convergence_count = FALSE)),            
-         )
+                                             convergence_count = FALSE)),
+         weibull = map(data, ~nls_multstart(rate~weibull_1995(temp = temp, a,topt,b,c),
+                                            data = .x,
+                                            iter = c(4,4,4,4),
+                                            start_lower = get_start_vals(.x$temp, .x$rate, model_name = 'weibull_1995') - 10,
+                                            start_upper = get_start_vals(.x$temp, .x$rate, model_name = 'weibull_1995') + 10,
+                                            lower = get_lower_lims(.x$temp, .x$rate, model_name = 'weibull_1995'),
+                                            upper = get_upper_lims(.x$temp, .x$rate, model_name = 'weibull_1995'),
+                                            supp_errors = 'Y',
+                                            convergence_count = FALSE)))
 
 # stack models
-s_stack <- select(s_fits, -data) %>%
-  pivot_longer(., names_to = 'model_name', values_to = 'fit', beta:weibull)
+d_stack <- select(d_fits, -data) %>%
+  pivot_longer(., names_to = 'model_name', values_to = 'fit', modified_gaussian:weibull)
 
 # get parameters using tidy (no longer working)
-s_params <- s_stack %>%
-  mutate(., est = map(fit, tidy)) %>%
-  select(-fit) %>%
-  unnest(est)
+#params <- d_stack %>%
+  #mutate(., est = map(fit, tidy)) %>%
+  #select(-fit) %>%
+  #unnest(est)
 
 # get predictions using augment
-s_newdata <- tibble(temp = seq(min(s$temp), max(s$temp), length.out = 100))
-s_preds <- s_stack %>%
-  mutate(., preds = map(fit, augment, newdata = s_newdata)) %>%
+newdata <- tibble(temp = seq(min(NCd$temp), max(NCd$temp), length.out = 100))
+d_preds <- d_stack %>%
+  mutate(., preds = map(fit, augment, newdata = newdata)) %>%
   select(-fit) %>%
   unnest(preds)
 ```
 
-## Compare models using AIC
 
 ```{r}
-AIC(s_fits[[2]][[1]],s_fits[[3]][[1]], s_fits[[4]][[1]], s_fits[[5]][[1]], s_fits[[6]][[1]], s_fits[[7]][[1]], s_fits[[8]][[1]], s_fits[[9]][[1]], s_fits[[10]][[1]], s_fits[[11]][[1]], s_fits[[12]][[1]], s_fits[[13]][[1]])
-```
-beta and boatman are by far the best!
-
-
-## Graphing all:
-
-```{r}
-ggplot(s_preds, aes(temp, rate)) +
-  geom_point(aes(temp, rate), s) +
+# plot fits
+NCMODS <- ggplot(d_preds, aes(temp, rate)) +
+  geom_point(aes(temp, rate), NCd) +
   geom_line(aes(temp, .fitted), col = 'blue') +
   facet_wrap(~model_name, scales = 'free', ncol = 5) +
   theme_bw(base_size = 12) +
@@ -1345,40 +1329,1183 @@ ggplot(s_preds, aes(temp, rate)) +
         strip.text = element_text(hjust = 0),
         strip.background = element_blank()) +
   labs(x = 'Temperature (ºC)',
-       y = 'Survival rate',
-       title = 'Model fit comparison') +
+       y = 'Development rate',
+       title = 'NC Pupal Dev Model fit comparison') +
   geom_hline(aes(yintercept = 0), linetype = 2)
+
+NCMODS
 ```
 
 
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Thesis/NCPupalModels.png", NCMODS, width = 8, height = 5)
+```
+
+## Compare models using AIC
 
 ```{r}
-toxaxis_s <- tibble(temp = seq(-5, 50, length.out = 100))
+AIC(d_fits[[2]][[1]],d_fits[[3]][[1]], d_fits[[4]][[1]], d_fits[[5]][[1]])
+```
 
-s_preds_two <- s_stack %>%
-  mutate(., preds = map(fit, augment, newdata = toxaxis_s)) %>%
+Now let's predict to the x-axis and graph that. 
+
+
+```{r}
+toxaxis <- tibble(temp = seq((-5), 50, length.out = 200))
+
+d_preds_two <- d_stack %>%
+  mutate(., preds = map(fit, augment, newdata = toxaxis)) %>%
+  select(-fit) %>%
+  unnest(preds)
+```
+
+```{r}
+y_lims <- c(0, 0.16)
+
+NCMODS2 <- ggplot(d_preds_two, aes(temp, rate)) +
+  geom_point(aes(temp, rate), NCd) +
+  geom_line(aes(temp, .fitted), col = 'blue') +
+  facet_wrap(~model_name, scales = 'free', ncol = 5) +
+  theme_bw(base_size = 12) +
+  theme(legend.position = 'none',
+        strip.text = element_text(hjust = 0),
+        strip.background = element_blank()) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Development rate',
+       title = 'NC Model fit comparison') +
+  geom_hline(aes(yintercept = 0), linetype = 2)+
+  scale_y_continuous(limits = y_lims)
+
+NCMODS2
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Thesis/NCPupalDevModels.png", NCMODS2, width = 8, height = 5)
+```
+
+## Graphing two best models for NC (NOT DOING YET)
+```{r}
+modGR <-ggplot(d_preds_two[c(201:400, 601:800), ], aes(temp, rate)) +
+  geom_point(aes(temp, rate), NCd, color = "black") +
+  geom_line(aes(temp, .fitted)) +
+  facet_wrap(~model_name, scales = 'free', ncol = 5) +
+  theme_bw(base_size = 12) +
+  theme(legend.position = 'none',
+        strip.text = element_text(hjust = 0),
+        strip.background = element_blank()) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Development rate',
+       title = 'Gaussian and Rezende Model For Development Rate') +
+  ylim(-.01, .1)+
+  geom_hline(aes(yintercept = 0), linetype = 2) + 
+
+modGR
+
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Figures/modweibull.png", modweibull, width = 8, height = 5)
+```
+
+## Getting the final dev rate curve 
+
+```{r}
+NCfitmodweibull <- nls_multstart(data = NCpupalmeans[, c(1, 7)], 
+                             Larv.Dev.Rate ~ weibull_1995(temp = Temperature, a, topt, b, c), 
+                             iter = c(4, 4, 4, 4), 
+                             start_lower = get_start_vals(NCpupalmeans$Temperature, NCpupalmeans$Larv.Dev.Rate,
+                                                          model_name = "weibull_1995") - 10,
+                             start_upper = get_start_vals(NCpupalmeans$Temperature, NCpupalmeans$Larv.Dev.Rate,
+                                                          model_name = "weibull_1995") + 10, 
+                             lower = get_lower_lims(NCpupalmeans$Temperature, NCpupalmeans$Larv.Dev.Rate,
+                                                    model_name = "weibull_1995"), 
+                             upper = get_upper_lims(NCpupalmeans$Temperature, NCpupalmeans$Larv.Dev.Rate,
+                                                    model_name = "weibull_1995"), 
+                             supp_errors = 'Y',
+                             convergence_count = FALSE) 
+
+```
+
+```{r}
+summary(NCfitmodweibull)
+```
+
+```{r}
+NCfitmodrezende <- nls_multstart(data = NCpupalmeans[, c(1, 7)], 
+                             Larv.Dev.Rate ~ rezende_2019(temp = Temperature, a, topt, b, c), 
+                             iter = c(4, 4, 4, 4), 
+                             start_lower = get_start_vals(NCpupalmeans$Temperature, NCpupalmeans$Larv.Dev.Rate,
+                                                          model_name = "rezende_2019") - 10,
+                             start_upper = get_start_vals(NCpupalmeans$Temperature, NCpupalmeans$Larv.Dev.Rate,
+                                                          model_name = "rezende_2019") + 10, 
+                             lower = get_lower_lims(NCpupalmeans$Temperature, NCpupalmeans$Larv.Dev.Rate,
+                                                    model_name = "rezende_2019"), 
+                             upper = get_upper_lims(NCpupalmeans$Temperature, NCpupalmeans$Larv.Dev.Rate,
+                                                    model_name = "rezende_2019"), 
+                             supp_errors = 'Y',
+                             convergence_count = FALSE) 
+
+```
+
+
+```{r}
+NCWeibull <- ggplot(d_preds_two[c(601:800), ], aes(temp, rate)) +
+  geom_point(aes(temp, rate), NCd, color = "black") +
+  geom_line(aes(temp, .fitted)) +
+  theme_bw(base_size = 12) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Development rate',
+       title = 'NC Weibull Curve') +
+  ylim(-.01, .1)+
+  geom_hline(aes(yintercept = 0), linetype = 2) 
+
+NCWeibull
+```
+
+## Now for California 
+
+```{r}
+CAadultmeans <- adultratemeans[adultratemeans$Population == "CA", ]
+```
+
+
+```{r}
+fitmodgaussCA <- nls_multstart(data = CAadultmeans[, c(1, 4)], 
+                             Pup.Dev.Rate ~ modifiedgaussian_2006(temp = Treatment, rmax, topt, a, b), 
+                             iter = c(4, 4, 4, 4), 
+                             start_lower = get_start_vals(CAadultmeans$Treatment, CAadultmeans$Pup.Dev.Rate,
+                                                          model_name = "modifiedgaussian_2006") - 10,
+                             start_upper = get_start_vals(CAadultmeans$Treatment, CAadultmeans$Pup.Dev.Rate,
+                                                          model_name = "modifiedgaussian_2006") + 10, 
+                             lower = get_lower_lims(CAadultmeans$Treatment, CAadultmeans$Pup.Dev.Rate,
+                                                    model_name = "modifiedgaussian_2006"), 
+                             upper = get_upper_lims(CAadultmeans$Treatment, CAadultmeans$Pup.Dev.Rate,
+                                                    model_name = "modifiedgaussian_2006")) 
+```
+
+```{r}
+summary(fitmodgaussCA)
+```
+```{r}
+CAd <- as.data.frame(cbind(CAadultmeans$Treatment, CAadultmeans$Pup.Dev.Rate))
+
+colnames(CAd) <- c("temp", "rate")
+```
+
+
+```{r}
+CA_d_fits <- nest(CAd, data = c(temp, rate)) %>%
+  mutate(modified_gaussian = map(data, ~nls_multstart(rate~modifiedgaussian_2006(temp = temp, rmax, topt, a, b),
+                                         data = .x,
+                                         iter = c(4,4,4,4),
+                                         start_lower = get_start_vals(.x$temp, .x$rate, 
+                                                                      model_name = 'modifiedgaussian_2006') - 10,
+                                         start_upper = get_start_vals(.x$temp, .x$rate, 
+                                                                      model_name = 'modifiedgaussian_2006') + 10,
+                                         lower = get_lower_lims(.x$temp, .x$rate, model_name = 'modifiedgaussian_2006'),
+                                         upper = get_upper_lims(.x$temp, .x$rate, model_name = 'modifiedgaussian_2006'),
+                                         supp_errors = 'Y',
+                                         convergence_count = FALSE)),
+         rezende = map(data, ~nls_multstart(rate~rezende_2019(temp = temp, q10, a, b, c),
+                                             data = .x,
+                                             iter = c(4,4,4,4),
+                                             start_lower = get_start_vals(.x$temp, .x$rate, model_name = 'rezende_2019') - 10,
+                                             start_upper = get_start_vals(.x$temp, .x$rate, model_name = 'rezende_2019') + 10,
+                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'rezende_2019'),
+                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'rezende_2019'),
+                                             supp_errors = 'Y',
+                                             convergence_count = FALSE)),
+         
+         sharpeschool =  map(data, ~nls_multstart(rate~sharpeschoolfull_1981(temp = temp, r_tref, e, el, tl, eh, th, tref=29),
+                                             data = .x,
+                                             iter = c(4,4,4,4,4,4),
+                                             start_lower = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'sharpeschoolfull_1981') - 10,
+                                             start_upper = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'sharpeschoolfull_1981') + 10,
+                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'sharpeschoolfull_1981'),
+                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'sharpeschoolfull_1981'),
+                                             supp_errors = 'Y',
+                                             convergence_count = FALSE)),
+         weibull = map(data, ~nls_multstart(rate~weibull_1995(temp = temp, a,topt,b,c),
+                                            data = .x,
+                                            iter = c(4,4,4,4),
+                                            start_lower = get_start_vals(.x$temp, .x$rate, model_name = 'weibull_1995') - 10,
+                                            start_upper = get_start_vals(.x$temp, .x$rate, model_name = 'weibull_1995') + 10,
+                                            lower = get_lower_lims(.x$temp, .x$rate, model_name = 'weibull_1995'),
+                                            upper = get_upper_lims(.x$temp, .x$rate, model_name = 'weibull_1995'),
+                                            supp_errors = 'Y',
+                                            convergence_count = FALSE)))
+
+# stack models
+CA_d_stack <- select(CA_d_fits, -data) %>%
+  pivot_longer(., names_to = 'model_name', values_to = 'fit', modified_gaussian:weibull)
+
+# get parameters using tidy (no longer working)
+#params <- d_stack %>%
+  #mutate(., est = map(fit, tidy)) %>%
+  #select(-fit) %>%
+  #unnest(est)
+
+# get predictions using augment
+newdata <- tibble(temp = seq(min(CAd$temp), max(CAd$temp), length.out = 100))
+CA_d_preds <- CA_d_stack %>%
+  mutate(., preds = map(fit, augment, newdata = newdata)) %>%
   select(-fit) %>%
   unnest(preds)
 ```
 
 
 ```{r}
-survmodelcomp <- ggplot(s_preds_two[c(501:600, 801:900), ], aes(temp, rate)) +
-  geom_point(aes(temp, rate), s, color = "black") +
-  geom_line(aes(temp, .fitted, color = model_name)) +
+# plot fits
+CAMODS <- ggplot(CA_d_preds, aes(temp, rate)) +
+  geom_point(aes(temp, rate), CAd) +
+  geom_line(aes(temp, .fitted), col = 'blue') +
+  facet_wrap(~model_name, scales = 'free', ncol = 5) +
   theme_bw(base_size = 12) +
+  theme(legend.position = 'none',
+        strip.text = element_text(hjust = 0),
+        strip.background = element_blank()) +
   labs(x = 'Temperature (ºC)',
-       y = 'Survival rate',
-       title = 'Model fit comparison', 
-       color = "Model name") +
-  geom_hline(aes(yintercept = 0), linetype = 2) + 
-  scale_color_manual(values = c("purple", "lime green"))
+       y = 'Development rate',
+       title = 'CA Pupal Development Rate Model fit comparison') +
+  geom_hline(aes(yintercept = 0), linetype = 2)
 
-survmodelcomp
+CAMODS
 
 ```
 
 ```{r}
-ggsave("~/Desktop/GitHub/Pieris/Figures/survmodelcomp.png", survmodelcomp, width = 8, height = 5)
+ggsave("~/Desktop/GitHub/Pieris/Thesis/CAPupalDevModels.png", CAMODS, width = 8, height = 5)
 ```
+
+
+```{r}
+AIC(CA_d_fits[[2]][[1]],CA_d_fits[[3]][[1]], CA_d_fits[[4]][[1]], CA_d_fits[[5]][[1]])
+```
+
+```{r}
+toxaxis <- tibble(temp = seq((-5), 50, length.out = 200))
+
+CA_d_preds_two <- CA_d_stack %>%
+  mutate(., preds = map(fit, augment, newdata = toxaxis)) %>%
+  select(-fit) %>%
+  unnest(preds)
+```
+
+```{r}
+CAMODS2 <- ggplot(CA_d_preds_two, aes(temp, rate)) +
+  geom_point(aes(temp, rate), CAd) +
+  geom_line(aes(temp, .fitted), col = 'blue') +
+  facet_wrap(~model_name, scales = 'free', ncol = 5) +
+  theme_bw(base_size = 12) +
+  theme(legend.position = 'none',
+        strip.text = element_text(hjust = 0),
+        strip.background = element_blank()) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Development rate',
+       title = 'CA Pupal Dev Rate Model fit comparison') +
+  geom_hline(aes(yintercept = 0), linetype = 2)+
+  scale_y_continuous(limits = y_lims)
+
+CAMODS2
+```
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Thesis/CADevRateModeltoaxis.png", CAMODS2, width = 8, height = 5)
+```
+
+
+```{r}
+CAWeibull <- ggplot(CA_d_preds_two[c(601:800), ], aes(temp, rate)) +
+  geom_point(aes(temp, rate), CAd, color = "black") +
+  geom_line(aes(temp, .fitted)) +
+  theme_bw(base_size = 12) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Development rate',
+       title = 'CA Weibull Curve') +
+  ylim(-.01, .1)+
+  geom_hline(aes(yintercept = 0), linetype = 2) 
+
+CAWeibull
+```
+
+```{r}
+CARezende <- ggplot(CA_d_preds_two[c(201:400), ], aes(temp, rate)) +
+  geom_point(aes(temp, rate), CAd, color = "black") +
+  geom_line(aes(temp, .fitted)) +
+  theme_bw(base_size = 12) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Development rate',
+       title = 'CA Rezende Curve') +
+  ylim(-.01, .1)+
+  geom_hline(aes(yintercept = 0), linetype = 2) 
+
+CARezende
+```
+
+## Finally for Washington
+
+
+```{r}
+WAadultmeans <- adultratemeans[adultratemeans$Population == "WA", ]
+```
+
+
+```{r}
+fitmodgaussWA <- nls_multstart(data = WAadultmeans[, c(1, 4)], 
+                             Pup.Dev.Rate ~ modifiedgaussian_2006(temp = Treatment, rmax, topt, a, b), 
+                             iter = c(5, 5, 5, 5), 
+                             start_lower = get_start_vals(WAadultmeans$Treatment, WAadultmeans$Pup.Dev.Rate,
+                                                          model_name = "modifiedgaussian_2006") - 10,
+                             start_upper = get_start_vals(WAadultmeans$Treatment, WAadultmeans$Pup.Dev.Rate,
+                                                          model_name = "modifiedgaussian_2006") + 10, 
+                             lower = get_lower_lims(WAadultmeans$Treatment, WAadultmeans$Pup.Dev.Rate,
+                                                    model_name = "modifiedgaussian_2006"), 
+                             upper = get_upper_lims(WAadultmeans$Treatment, WAadultmeans$Pup.Dev.Rate,
+                                                    model_name = "modifiedgaussian_2006")) 
+```
+
+```{r}
+summary(fitmodgaussWA)
+```
+
+
+```{r}
+WAd <- as.data.frame(cbind(WAadultmeans$Treatment, WAadultmeans$Pup.Dev.Rate))
+
+colnames(WAd) <- c("temp", "rate")
+```
+
+
+```{r}
+WA_d_fits <- nest(WAd, data = c(temp, rate)) %>%
+  mutate(modified_gaussian = map(data, ~nls_multstart(rate~modifiedgaussian_2006(temp = temp, rmax, topt, a, b),
+                                         data = .x,
+                                         iter = c(4,4,4,4),
+                                         start_lower = get_start_vals(.x$temp, .x$rate, 
+                                                                      model_name = 'modifiedgaussian_2006') - 10,
+                                         start_upper = get_start_vals(.x$temp, .x$rate, 
+                                                                      model_name = 'modifiedgaussian_2006') + 10,
+                                         lower = get_lower_lims(.x$temp, .x$rate, model_name = 'modifiedgaussian_2006'),
+                                         upper = get_upper_lims(.x$temp, .x$rate, model_name = 'modifiedgaussian_2006'),
+                                         supp_errors = 'Y',
+                                         convergence_count = FALSE)),
+         rezende = map(data, ~nls_multstart(rate~rezende_2019(temp = temp, q10, a, b, c),
+                                             data = .x,
+                                             iter = c(4,4,4,4),
+                                             start_lower = get_start_vals(.x$temp, .x$rate, model_name = 'rezende_2019') - 10,
+                                             start_upper = get_start_vals(.x$temp, .x$rate, model_name = 'rezende_2019') + 10,
+                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'rezende_2019'),
+                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'rezende_2019'),
+                                             supp_errors = 'Y',
+                                             convergence_count = FALSE)),
+         
+         sharpeschool =  map(data, ~nls_multstart(rate~sharpeschoolfull_1981(temp = temp, r_tref, e, el, tl, eh, th, tref=29),
+                                             data = .x,
+                                             iter = c(4,4,4,4,4,4),
+                                             start_lower = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'sharpeschoolfull_1981') - 10,
+                                             start_upper = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'sharpeschoolfull_1981') + 10,
+                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'sharpeschoolfull_1981'),
+                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'sharpeschoolfull_1981'),
+                                             supp_errors = 'Y',
+                                             convergence_count = FALSE)),
+         weibull = map(data, ~nls_multstart(rate~weibull_1995(temp = temp, a,topt,b,c),
+                                            data = .x,
+                                            iter = c(4,4,4,4),
+                                            start_lower = get_start_vals(.x$temp, .x$rate, model_name = 'weibull_1995') - 10,
+                                            start_upper = get_start_vals(.x$temp, .x$rate, model_name = 'weibull_1995') + 10,
+                                            lower = get_lower_lims(.x$temp, .x$rate, model_name = 'weibull_1995'),
+                                            upper = get_upper_lims(.x$temp, .x$rate, model_name = 'weibull_1995'),
+                                            supp_errors = 'Y',
+                                            convergence_count = FALSE)))
+
+# stack models
+WA_d_stack <- select(WA_d_fits, -data) %>%
+  pivot_longer(., names_to = 'model_name', values_to = 'fit', modified_gaussian:weibull)
+
+# get parameters using tidy (no longer working)
+#params <- d_stack %>%
+  #mutate(., est = map(fit, tidy)) %>%
+  #select(-fit) %>%
+  #unnest(est)
+
+# get predictions using augment
+newdata <- tibble(temp = seq(min(CAd$temp), max(CAd$temp), length.out = 100))
+WA_d_preds <- WA_d_stack %>%
+  mutate(., preds = map(fit, augment, newdata = newdata)) %>%
+  select(-fit) %>%
+  unnest(preds)
+```
+
+
+```{r}
+# plot fits
+WAMODS <- ggplot(WA_d_preds, aes(temp, rate)) +
+  geom_point(aes(temp, rate), WAd) +
+  geom_line(aes(temp, .fitted), col = 'blue') +
+  facet_wrap(~model_name, scales = 'free', ncol = 5) +
+  theme_bw(base_size = 12) +
+  theme(legend.position = 'none',
+        strip.text = element_text(hjust = 0),
+        strip.background = element_blank()) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Development rate',
+       title = 'WA Pupal Dev Rate Model fit comparison') +
+  geom_hline(aes(yintercept = 0), linetype = 2)
+
+WAMODS
+
+```
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Thesis/WAPupalDevModels.png", WAMODS, width = 8, height = 5)
+```
+
+```{r}
+AIC(WA_d_fits[[2]][[1]],WA_d_fits[[3]][[1]], WA_d_fits[[4]][[1]], WA_d_fits[[5]][[1]])
+```
+
+```{r}
+toxaxis <- tibble(temp = seq((-5), 50, length.out = 200))
+
+WA_d_preds_two <- WA_d_stack %>%
+  mutate(., preds = map(fit, augment, newdata = toxaxis)) %>%
+  select(-fit) %>%
+  unnest(preds)
+```
+
+```{r}
+y_lims<- c(0,.185)
+WAMODS2 <- ggplot(WA_d_preds_two, aes(temp, rate)) +
+  geom_point(aes(temp, rate), WAd) +
+  geom_line(aes(temp, .fitted), col = 'blue') +
+  facet_wrap(~model_name, scales = 'free', ncol = 5) +
+  theme_bw(base_size = 12) +
+  theme(legend.position = 'none',
+        strip.text = element_text(hjust = 0),
+        strip.background = element_blank()) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Development rate',
+       title = 'WA Adult Dev Rate Model fit comparison') +
+  geom_hline(aes(yintercept = 0), linetype = 2)+
+  scale_y_continuous(limits = y_lims)
+
+WAMODS2
+```
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Thesis/WAPupalDevModelstoaxis.png", WAMODS2, width = 8, height = 5)
+```
+
+
+```{r}
+WAWeibull <- ggplot(WA_d_preds_two[c(601:800), ], aes(temp, rate)) +
+  geom_point(aes(temp, rate), WAd, color = "black") +
+  geom_line(aes(temp, .fitted)) +
+  theme_bw(base_size = 12) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Development rate',
+       title = 'WA Weibull Curve') +
+  ylim(-.01, .1)+
+  geom_hline(aes(yintercept = 0), linetype = 2) 
+
+WAWeibull
+```
+
+```{r}
+WARezende <- ggplot(WA_d_preds_two[c(201:400), ], aes(temp, rate)) +
+  geom_point(aes(temp, rate), WAd, color = "black") +
+  geom_line(aes(temp, .fitted)) +
+  theme_bw(base_size = 12) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Development rate',
+       title = 'WA Rezende Curve') +
+  ylim(-.01, .1)+
+  geom_hline(aes(yintercept = 0), linetype = 2) 
+
+WARezende
+```
+
+## Now I want to overlap all three weibull curves for the populations and all three rezende curves for the populations
+
+```{r}
+WA_d_preds_two$Population <- "WA"
+d_preds_two$Population <- "NC"
+CA_d_preds_two$Population <- "CA"
+
+AllPopWeibull <- rbind(WA_d_preds_two[c(601:800), ], d_preds_two[c(601:800), ])
+AllPopWeibull <-rbind(AllPopWeibull, CA_d_preds_two[c(601:800), ])
+
+AllPopRezende <- rbind(WA_d_preds_two[c(201:400), ], d_preds_two[c(201:400), ])
+AllPopRezende <- rbind(AllPopRezende, CA_d_preds_two[c(201:400), ])
+
+CAd$Population <- "CA"
+NCd$Population <- "NC"
+WAd$Population <- "WA"
+AllPopPoints <- rbind(CAd, NCd)
+AllPopPoints <- rbind(AllPopPoints, WAd)
+```
+
+
+
+```{r}
+AllWeibull <- ggplot(AllPopWeibull, aes(temp, rate, group = Population, color = Population, linetype= Population, shape = Population)) +
+  geom_point(aes(temp, rate, group = Population, color = Population), AllPopPoints, size = 3) + 
+  geom_line(aes(temp, .fitted), size = 1) +
+  theme_bw(base_size = 12) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Development rate',) +
+  font("xy", size = 15)+
+  font("x.text", size = 12)+
+  font("y.text", size = 12)+
+  ylim(-.01, .2)+
+  geom_hline(aes(yintercept = 0), linetype = 2)  + 
+  scale_color_manual(values = c("#1E88E5", "orange", "lime green")) +
+  scale_linetype_manual(values = c("solid", "dashed", "dotted"))
+
+AllWeibull
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Thesis/AllPopsPupalWeibull.png", AllWeibull, width = 8, height = 5)
+```
+
+
+```{r}
+AllRezende <- ggplot(AllPopRezende, aes(temp, rate, group = Population, color = Population, shape = Population, linetype = Population)) +
+  geom_point(aes(temp, rate, group = Population, color = Population), AllPopPoints, size = 3) + 
+  geom_line(aes(temp, .fitted), size = 1) +
+  theme_bw(base_size = 12) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Development rate') +
+  font("xy", size = 15)+
+  font("x.text", size = 12)+
+  font("y.text", size = 12)+
+  font("legend.title", size= 15)+
+  font("legend.text", size = 12)+
+  ylim(-.01, .2)+
+  geom_hline(aes(yintercept = 0), linetype = 2)  + 
+  scale_color_manual(values = c("#1E88E5", "orange", "lime green"))+
+  scale_linetype_manual(values = c("solid", "dashed", "dotted"))
+
+AllRezende
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Thesis/AllPopsPupalRezende.png", AllRezende, width = 8, height = 5)
+```
+
+#5. Doing modeling for pupal stage of the larval experiments (rearing temperature)
+
+
+## Development rate
+
+```{r}
+Rearingcomb$Pup.Dev.Rate <- 1/Rearingcomb$Time.eclose
+```
+
+
+```{r}
+radultratemeans <- summarySE(data = Rearingcomb[Rearingcomb$Surv.adult == "Yes" & !is.na(Rearingcomb$Pup.Dev.Rate == TRUE), ], measurevar = "Pup.Dev.Rate", groupvars = c("Treatment", "Population"))
+
+radultratemeans$Rate.se <- radultratemeans$se
+radultratemeans$Rate.N <-radultratemeans$N
+
+radultratemeans <- radultratemeans %>%
+  select(Treatment, Population, Rate.N, Pup.Dev.Rate, Rate.se)
+
+radultratemeans
+```
+
+
+## Survival to pupation vs temp treatment (NOT DOING YET)
+
+1. Create summary table
+2. Create blank table for input
+3. Hard code input
+4. Graph it
+
+### 1. Create summary table
+
+```{r}
+survpercsum <- summarySE(data = Pupalcomb, 
+                         measurevar = "Mass.pupa", 
+                         groupvars = c("Temperature", "Surv.pupa", "Population"))
+```
+
+### 2. Create blank table
+
+```{r}
+survdata <- data.frame(Mean.Temp = c(16, 21, 26, 30, 34), 
+                       surv.perc = 0, 
+                       group = 1)
+
+survdata$Mean.Temp <- as.factor(survdata$Mean.Temp)
+survdata$group = as.factor(survdata$group)
+```
+
+### 3. Hard code it
+
+```{r}
+survdata[1, 2] <- survpercsum[2, 3] / (survpercsum[2, 3] + survpercsum[1, 3])
+survdata[2, 2] <- survpercsum[4, 3] / (survpercsum[4, 3] + survpercsum[3, 3])
+survdata[3, 2] <- survpercsum[6, 3] / (survpercsum[6, 3] + survpercsum[5, 3])
+survdata[4, 2] <- survpercsum[8, 3] / (survpercsum[8, 3] + survpercsum[7, 3])
+survdata[5, 2] <- survpercsum[10, 3] / (survpercsum[10, 3] + survpercsum[9, 3])
+```
+
+# 2. Fit dev rate curve just for successful pupa and intermediates using rTPC
+
+
+Change temp to not be a factor
+```{r}
+#pupalmeans$Mean.Temp <- as.character(pupalmeans$Mean.Temp)
+##pupalmeans$Mean.Temp <- as.numeric(pupalmeans$Mean.Temp)
+
+#pupalmeansyes <- pupalmeans[pupalmeans$PupateOk == "Y", ]
+```
+
+
+## For NC first...
+Our object is called `r pupalmeans`. 
+
+```{r}
+NCradultmeans <-radultratemeans[radultratemeans$Population == "NC", ]
+```
+
+
+```{r}
+fitmodgaussNC <- nls_multstart(data = NCradultmeans[, c(1, 4)], 
+                             Pup.Dev.Rate ~ modifiedgaussian_2006(temp = Treatment, rmax, topt, a, b), 
+                             iter = c(5, 5, 5, 5), 
+                             start_lower = get_start_vals(NCradultmeans$Treatment, NCradultmeans$Pup.Dev.Rate,
+                                                          model_name = "modifiedgaussian_2006") - 10,
+                             start_upper = get_start_vals(NCradultmeans$Treatment, NCradultmeans$Pup.Dev.Rate,
+                                                          model_name = "modifiedgaussian_2006") + 10, 
+                             lower = get_lower_lims(NCradultmeans$Treatment, NCradultmeans$Pup.Dev.Rate,
+                                                    model_name = "modifiedgaussian_2006"), 
+                             upper = get_upper_lims(NCradultmeans$Treatment, NCradultmeans$Pup.Dev.Rate,
+                                                    model_name = "modifiedgaussian_2006")) 
+```
+
+```{r}
+summary(fitmodgaussNC)
+```
+
+## Modifying Lauren Buckley's code
+
+
+```{r}
+NCd <- as.data.frame(cbind(NCradultmeans$Treatment, NCradultmeans$Pup.Dev.Rate))
+
+colnames(NCd) <- c("temp", "rate")
+```
+
+
+```{r}
+d_fits <- nest(NCd, data = c(temp, rate)) %>%
+  mutate(modified_gaussian = map(data, ~nls_multstart(rate~modifiedgaussian_2006(temp = temp, rmax, topt, a, b),
+                                         data = .x,
+                                         iter = c(4,4,4,4),
+                                         start_lower = get_start_vals(.x$temp, .x$rate, 
+                                                                      model_name = 'modifiedgaussian_2006') - 10,
+                                         start_upper = get_start_vals(.x$temp, .x$rate, 
+                                                                      model_name = 'modifiedgaussian_2006') + 10,
+                                         lower = get_lower_lims(.x$temp, .x$rate, model_name = 'modifiedgaussian_2006'),
+                                         upper = get_upper_lims(.x$temp, .x$rate, model_name = 'modifiedgaussian_2006'),
+                                         supp_errors = 'Y',
+                                         convergence_count = FALSE)),
+         rezende = map(data, ~nls_multstart(rate~rezende_2019(temp = temp, q10, a, b, c),
+                                             data = .x,
+                                             iter = c(4,4,4,4),
+                                             start_lower = get_start_vals(.x$temp, .x$rate, model_name = 'rezende_2019') - 10,
+                                             start_upper = get_start_vals(.x$temp, .x$rate, model_name = 'rezende_2019') + 10,
+                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'rezende_2019'),
+                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'rezende_2019'),
+                                             supp_errors = 'Y',
+                                             convergence_count = FALSE)),
+         
+         sharpeschool =  map(data, ~nls_multstart(rate~sharpeschoolfull_1981(temp = temp, r_tref, e, el, tl, eh, th, tref=29),
+                                             data = .x,
+                                             iter = c(4,4,4,4,4,4),
+                                             start_lower = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'sharpeschoolfull_1981') - 10,
+                                             start_upper = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'sharpeschoolfull_1981') + 10,
+                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'sharpeschoolfull_1981'),
+                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'sharpeschoolfull_1981'),
+                                             supp_errors = 'Y',
+                                             convergence_count = FALSE)),
+         weibull = map(data, ~nls_multstart(rate~weibull_1995(temp = temp, a,topt,b,c),
+                                            data = .x,
+                                            iter = c(4,4,4,4),
+                                            start_lower = get_start_vals(.x$temp, .x$rate, model_name = 'weibull_1995') - 10,
+                                            start_upper = get_start_vals(.x$temp, .x$rate, model_name = 'weibull_1995') + 10,
+                                            lower = get_lower_lims(.x$temp, .x$rate, model_name = 'weibull_1995'),
+                                            upper = get_upper_lims(.x$temp, .x$rate, model_name = 'weibull_1995'),
+                                            supp_errors = 'Y',
+                                            convergence_count = FALSE)))
+
+# stack models
+d_stack <- select(d_fits, -data) %>%
+  pivot_longer(., names_to = 'model_name', values_to = 'fit', modified_gaussian:weibull)
+
+# get parameters using tidy (no longer working)
+#params <- d_stack %>%
+  #mutate(., est = map(fit, tidy)) %>%
+  #select(-fit) %>%
+  #unnest(est)
+
+# get predictions using augment
+newdata <- tibble(temp = seq(min(NCd$temp), max(NCd$temp), length.out = 100))
+d_preds <- d_stack %>%
+  mutate(., preds = map(fit, augment, newdata = newdata)) %>%
+  select(-fit) %>%
+  unnest(preds)
+```
+
+
+```{r}
+# plot fits
+NCMODS <- ggplot(d_preds, aes(temp, rate)) +
+  geom_point(aes(temp, rate), NCd) +
+  geom_line(aes(temp, .fitted), col = 'blue') +
+  facet_wrap(~model_name, scales = 'free', ncol = 5) +
+  theme_bw(base_size = 12) +
+  theme(legend.position = 'none',
+        strip.text = element_text(hjust = 0),
+        strip.background = element_blank()) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Development rate',
+       title = 'NC Pupal Dev Model fit comparison (Chronic)') +
+  geom_hline(aes(yintercept = 0), linetype = 2)
+
+NCMODS
+```
+
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Thesis/NCPupalModelsREARING.png", NCMODS, width = 8, height = 5)
+```
+
+## Compare models using AIC
+
+```{r}
+AIC(d_fits[[2]][[1]],d_fits[[3]][[1]], d_fits[[4]][[1]], d_fits[[5]][[1]])
+```
+
+Now let's predict to the x-axis and graph that. 
+
+
+```{r}
+toxaxis <- tibble(temp = seq((-5), 50, length.out = 200))
+
+d_preds_two <- d_stack %>%
+  mutate(., preds = map(fit, augment, newdata = toxaxis)) %>%
+  select(-fit) %>%
+  unnest(preds)
+```
+
+```{r}
+y_lims <- c(0, 0.16)
+
+NCMODS2 <- ggplot(d_preds_two, aes(temp, rate)) +
+  geom_point(aes(temp, rate), NCd) +
+  geom_line(aes(temp, .fitted), col = 'blue') +
+  facet_wrap(~model_name, scales = 'free', ncol = 5) +
+  theme_bw(base_size = 12) +
+  theme(legend.position = 'none',
+        strip.text = element_text(hjust = 0),
+        strip.background = element_blank()) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Development rate',
+       title = 'NC Pupal Dev Rate Model fit comparison (Chronic)') +
+  geom_hline(aes(yintercept = 0), linetype = 2)+
+  scale_y_continuous(limits = y_lims)
+
+NCMODS2
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Thesis/NCPupalDevModelsRearing.png", NCMODS2, width = 8, height = 5)
+```
+
+## Now for California 
+
+```{r}
+CAradultmeans <- radultratemeans[radultratemeans$Population == "CA", ]
+```
+
+
+```{r}
+fitmodgaussCA <- nls_multstart(data = CAradultmeans[, c(1, 4)], 
+                             Pup.Dev.Rate ~ modifiedgaussian_2006(temp = Treatment, rmax, topt, a, b), 
+                             iter = c(4, 4, 4, 4), 
+                             start_lower = get_start_vals(CAadultmeans$Treatment, CAadultmeans$Pup.Dev.Rate,
+                                                          model_name = "modifiedgaussian_2006") - 10,
+                             start_upper = get_start_vals(CAadultmeans$Treatment, CAadultmeans$Pup.Dev.Rate,
+                                                          model_name = "modifiedgaussian_2006") + 10, 
+                             lower = get_lower_lims(CAadultmeans$Treatment, CAadultmeans$Pup.Dev.Rate,
+                                                    model_name = "modifiedgaussian_2006"), 
+                             upper = get_upper_lims(CAadultmeans$Treatment, CAadultmeans$Pup.Dev.Rate,
+                                                    model_name = "modifiedgaussian_2006")) 
+```
+
+```{r}
+summary(fitmodgaussCA)
+```
+
+```{r}
+CAd <- as.data.frame(cbind(CAradultmeans$Treatment, CAradultmeans$Pup.Dev.Rate))
+
+colnames(CAd) <- c("temp", "rate")
+```
+
+
+```{r}
+CA_d_fits <- nest(CAd, data = c(temp, rate)) %>%
+  mutate(modified_gaussian = map(data, ~nls_multstart(rate~modifiedgaussian_2006(temp = temp, rmax, topt, a, b),
+                                         data = .x,
+                                         iter = c(4,4,4,4),
+                                         start_lower = get_start_vals(.x$temp, .x$rate, 
+                                                                      model_name = 'modifiedgaussian_2006') - 10,
+                                         start_upper = get_start_vals(.x$temp, .x$rate, 
+                                                                      model_name = 'modifiedgaussian_2006') + 10,
+                                         lower = get_lower_lims(.x$temp, .x$rate, model_name = 'modifiedgaussian_2006'),
+                                         upper = get_upper_lims(.x$temp, .x$rate, model_name = 'modifiedgaussian_2006'),
+                                         supp_errors = 'Y',
+                                         convergence_count = FALSE)),
+         rezende = map(data, ~nls_multstart(rate~rezende_2019(temp = temp, q10, a, b, c),
+                                             data = .x,
+                                             iter = c(4,4,4,4),
+                                             start_lower = get_start_vals(.x$temp, .x$rate, model_name = 'rezende_2019') - 10,
+                                             start_upper = get_start_vals(.x$temp, .x$rate, model_name = 'rezende_2019') + 10,
+                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'rezende_2019'),
+                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'rezende_2019'),
+                                             supp_errors = 'Y',
+                                             convergence_count = FALSE)),
+         
+         sharpeschool =  map(data, ~nls_multstart(rate~sharpeschoolfull_1981(temp = temp, r_tref, e, el, tl, eh, th, tref=29),
+                                             data = .x,
+                                             iter = c(4,4,4,4,4,4),
+                                             start_lower = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'sharpeschoolfull_1981') - 10,
+                                             start_upper = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'sharpeschoolfull_1981') + 10,
+                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'sharpeschoolfull_1981'),
+                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'sharpeschoolfull_1981'),
+                                             supp_errors = 'Y',
+                                             convergence_count = FALSE)),
+         weibull = map(data, ~nls_multstart(rate~weibull_1995(temp = temp, a,topt,b,c),
+                                            data = .x,
+                                            iter = c(4,4,4,4),
+                                            start_lower = get_start_vals(.x$temp, .x$rate, model_name = 'weibull_1995') - 10,
+                                            start_upper = get_start_vals(.x$temp, .x$rate, model_name = 'weibull_1995') + 10,
+                                            lower = get_lower_lims(.x$temp, .x$rate, model_name = 'weibull_1995'),
+                                            upper = get_upper_lims(.x$temp, .x$rate, model_name = 'weibull_1995'),
+                                            supp_errors = 'Y',
+                                            convergence_count = FALSE)))
+
+# stack models
+CA_d_stack <- select(CA_d_fits, -data) %>%
+  pivot_longer(., names_to = 'model_name', values_to = 'fit', modified_gaussian:weibull)
+
+# get parameters using tidy (no longer working)
+#params <- d_stack %>%
+  #mutate(., est = map(fit, tidy)) %>%
+  #select(-fit) %>%
+  #unnest(est)
+
+# get predictions using augment
+newdata <- tibble(temp = seq(min(CAd$temp), max(CAd$temp), length.out = 100))
+CA_d_preds <- CA_d_stack %>%
+  mutate(., preds = map(fit, augment, newdata = newdata)) %>%
+  select(-fit) %>%
+  unnest(preds)
+```
+
+
+```{r}
+# plot fits
+CAMODS <- ggplot(CA_d_preds, aes(temp, rate)) +
+  geom_point(aes(temp, rate), CAd) +
+  geom_line(aes(temp, .fitted), col = 'blue') +
+  facet_wrap(~model_name, scales = 'free', ncol = 5) +
+  theme_bw(base_size = 12) +
+  theme(legend.position = 'none',
+        strip.text = element_text(hjust = 0),
+        strip.background = element_blank()) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Development rate',
+       title = 'CA Pupal Development Rate Model fit comparison (Chronic)') +
+  geom_hline(aes(yintercept = 0), linetype = 2)
+
+CAMODS
+
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Thesis/CAPupalDevModelsRearing.png", CAMODS, width = 8, height = 5)
+```
+
+
+```{r}
+AIC(CA_d_fits[[2]][[1]],CA_d_fits[[3]][[1]], CA_d_fits[[4]][[1]], CA_d_fits[[5]][[1]])
+```
+
+```{r}
+toxaxis <- tibble(temp = seq((-5), 50, length.out = 200))
+
+CA_d_preds_two <- CA_d_stack %>%
+  mutate(., preds = map(fit, augment, newdata = toxaxis)) %>%
+  select(-fit) %>%
+  unnest(preds)
+```
+
+```{r}
+CAMODS2 <- ggplot(CA_d_preds_two, aes(temp, rate)) +
+  geom_point(aes(temp, rate), CAd) +
+  geom_line(aes(temp, .fitted), col = 'blue') +
+  facet_wrap(~model_name, scales = 'free', ncol = 5) +
+  theme_bw(base_size = 12) +
+  theme(legend.position = 'none',
+        strip.text = element_text(hjust = 0),
+        strip.background = element_blank()) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Development rate',
+       title = 'CA Pupal Dev Rate Model fit comparison (Chronic)') +
+  geom_hline(aes(yintercept = 0), linetype = 2)+
+  scale_y_continuous(limits = y_lims)
+
+CAMODS2
+```
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Thesis/CADevRateModeltoaxisChronic.png", CAMODS2, width = 8, height = 5)
+```
+
+
+## Finally for Washington
+
+```{r}
+WAradultmeans <- radultratemeans[radultratemeans$Population == "WA", ]
+```
+
+
+```{r}
+fitmodgaussWA <- nls_multstart(data = WAradultmeans[, c(1, 4)], 
+                             Pup.Dev.Rate ~ modifiedgaussian_2006(temp = Treatment, rmax, topt, a, b), 
+                             iter = c(5, 5, 5, 5), 
+                             start_lower = get_start_vals(WAadultmeans$Treatment, WAadultmeans$Pup.Dev.Rate,
+                                                          model_name = "modifiedgaussian_2006") - 10,
+                             start_upper = get_start_vals(WAadultmeans$Treatment, WAadultmeans$Pup.Dev.Rate,
+                                                          model_name = "modifiedgaussian_2006") + 10, 
+                             lower = get_lower_lims(WAadultmeans$Treatment, WAadultmeans$Pup.Dev.Rate,
+                                                    model_name = "modifiedgaussian_2006"), 
+                             upper = get_upper_lims(WAadultmeans$Treatment, WAadultmeans$Pup.Dev.Rate,
+                                                    model_name = "modifiedgaussian_2006")) 
+```
+
+```{r}
+summary(fitmodgaussWA)
+```
+
+
+```{r}
+WAd <- as.data.frame(cbind(WAradultmeans$Treatment, WAradultmeans$Pup.Dev.Rate))
+
+colnames(WAd) <- c("temp", "rate")
+```
+
+
+```{r}
+WA_d_fits <- nest(WAd, data = c(temp, rate)) %>%
+  mutate(modified_gaussian = map(data, ~nls_multstart(rate~modifiedgaussian_2006(temp = temp, rmax, topt, a, b),
+                                         data = .x,
+                                         iter = c(4,4,4,4),
+                                         start_lower = get_start_vals(.x$temp, .x$rate, 
+                                                                      model_name = 'modifiedgaussian_2006') - 10,
+                                         start_upper = get_start_vals(.x$temp, .x$rate, 
+                                                                      model_name = 'modifiedgaussian_2006') + 10,
+                                         lower = get_lower_lims(.x$temp, .x$rate, model_name = 'modifiedgaussian_2006'),
+                                         upper = get_upper_lims(.x$temp, .x$rate, model_name = 'modifiedgaussian_2006'),
+                                         supp_errors = 'Y',
+                                         convergence_count = FALSE)),
+         rezende = map(data, ~nls_multstart(rate~rezende_2019(temp = temp, q10, a, b, c),
+                                             data = .x,
+                                             iter = c(4,4,4,4),
+                                             start_lower = get_start_vals(.x$temp, .x$rate, model_name = 'rezende_2019') - 10,
+                                             start_upper = get_start_vals(.x$temp, .x$rate, model_name = 'rezende_2019') + 10,
+                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'rezende_2019'),
+                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'rezende_2019'),
+                                             supp_errors = 'Y',
+                                             convergence_count = FALSE)),
+         
+         sharpeschool =  map(data, ~nls_multstart(rate~sharpeschoolfull_1981(temp = temp, r_tref, e, el, tl, eh, th, tref=29),
+                                             data = .x,
+                                             iter = c(4,4,4,4,4,4),
+                                             start_lower = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'sharpeschoolfull_1981') - 10,
+                                             start_upper = get_start_vals(.x$temp, .x$rate, 
+                                                                          model_name = 'sharpeschoolfull_1981') + 10,
+                                             lower = get_lower_lims(.x$temp, .x$rate, model_name = 'sharpeschoolfull_1981'),
+                                             upper = get_upper_lims(.x$temp, .x$rate, model_name = 'sharpeschoolfull_1981'),
+                                             supp_errors = 'Y',
+                                             convergence_count = FALSE)),
+         weibull = map(data, ~nls_multstart(rate~weibull_1995(temp = temp, a,topt,b,c),
+                                            data = .x,
+                                            iter = c(4,4,4,4),
+                                            start_lower = get_start_vals(.x$temp, .x$rate, model_name = 'weibull_1995') - 10,
+                                            start_upper = get_start_vals(.x$temp, .x$rate, model_name = 'weibull_1995') + 10,
+                                            lower = get_lower_lims(.x$temp, .x$rate, model_name = 'weibull_1995'),
+                                            upper = get_upper_lims(.x$temp, .x$rate, model_name = 'weibull_1995'),
+                                            supp_errors = 'Y',
+                                            convergence_count = FALSE)))
+
+# stack models
+WA_d_stack <- select(WA_d_fits, -data) %>%
+  pivot_longer(., names_to = 'model_name', values_to = 'fit', modified_gaussian:weibull)
+
+# get parameters using tidy (no longer working)
+#params <- d_stack %>%
+  #mutate(., est = map(fit, tidy)) %>%
+  #select(-fit) %>%
+  #unnest(est)
+
+# get predictions using augment
+newdata <- tibble(temp = seq(min(CAd$temp), max(CAd$temp), length.out = 100))
+WA_d_preds <- WA_d_stack %>%
+  mutate(., preds = map(fit, augment, newdata = newdata)) %>%
+  select(-fit) %>%
+  unnest(preds)
+```
+
+
+```{r}
+# plot fits
+WAMODS <- ggplot(WA_d_preds, aes(temp, rate)) +
+  geom_point(aes(temp, rate), WAd) +
+  geom_line(aes(temp, .fitted), col = 'blue') +
+  facet_wrap(~model_name, scales = 'free', ncol = 5) +
+  theme_bw(base_size = 12) +
+  theme(legend.position = 'none',
+        strip.text = element_text(hjust = 0),
+        strip.background = element_blank()) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Development rate',
+       title = 'WA Pupal Dev Rate Model fit comparison (chronic)') +
+  geom_hline(aes(yintercept = 0), linetype = 2)
+
+WAMODS
+
+```
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Thesis/WAPupalDevModelsRearing.png", WAMODS, width = 8, height = 5)
+```
+
+```{r}
+AIC(WA_d_fits[[2]][[1]],WA_d_fits[[3]][[1]], WA_d_fits[[4]][[1]], WA_d_fits[[5]][[1]])
+```
+
+```{r}
+toxaxis <- tibble(temp = seq((-5), 50, length.out = 200))
+
+WA_d_preds_two <- WA_d_stack %>%
+  mutate(., preds = map(fit, augment, newdata = toxaxis)) %>%
+  select(-fit) %>%
+  unnest(preds)
+```
+
+```{r}
+y_lims<- c(0,.17)
+WAMODS2 <- ggplot(WA_d_preds_two, aes(temp, rate)) +
+  geom_point(aes(temp, rate), WAd) +
+  geom_line(aes(temp, .fitted), col = 'blue') +
+  facet_wrap(~model_name, scales = 'free', ncol = 5) +
+  theme_bw(base_size = 12) +
+  theme(legend.position = 'none',
+        strip.text = element_text(hjust = 0),
+        strip.background = element_blank()) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Development rate',
+       title = 'WA Adult Dev Rate Model fit comparison (chronic)') +
+  geom_hline(aes(yintercept = 0), linetype = 2)+
+  scale_y_continuous(limits = y_lims)
+
+WAMODS2
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Thesis/WAPupalDevModelstoaxisRearing.png", WAMODS2, width = 8, height = 5)
+```
+
+## Now I want to overlap all three weibull curves for the populations and all three rezende curves for the populations
+
+```{r}
+WA_d_preds_two$Population <- "WA"
+d_preds_two$Population <- "NC"
+CA_d_preds_two$Population <- "CA"
+
+AllPopWeibull <- rbind(WA_d_preds_two[c(601:800), ], d_preds_two[c(601:800), ])
+AllPopWeibull <-rbind(AllPopWeibull, CA_d_preds_two[c(601:800), ])
+
+AllPopRezende <- rbind(WA_d_preds_two[c(201:400), ], d_preds_two[c(201:400), ])
+AllPopRezende <- rbind(AllPopRezende, CA_d_preds_two[c(201:400), ])
+
+CAd$Population <- "CA"
+NCd$Population <- "NC"
+WAd$Population <- "WA"
+AllPopPoints <- rbind(CAd, NCd)
+AllPopPoints <- rbind(AllPopPoints, WAd)
+```
+
+
+
+```{r}
+AllWeibull <- ggplot(AllPopWeibull, aes(temp, rate, group = Population, color = Population, linetype= Population, shape = Population)) +
+  geom_point(aes(temp, rate, group = Population, color = Population), AllPopPoints, size = 3) + 
+  geom_line(aes(temp, .fitted), size = 1) +
+  theme_bw(base_size = 12) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Development rate',) +
+  font("xy", size = 15)+
+  font("x.text", size = 12)+
+  font("y.text", size = 12)+
+  ylim(-.01, .2)+
+  geom_hline(aes(yintercept = 0), linetype = 2)  + 
+  scale_color_manual(values = c("#1E88E5", "orange", "lime green")) +
+  scale_linetype_manual(values = c("solid", "dashed", "dotted"))
+
+AllWeibull
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Thesis/AllPopsPupalWeibullRearing.png", AllWeibull, width = 8, height = 5)
+```
+
+
+```{r}
+AllRezende <- ggplot(AllPopRezende, aes(temp, rate, group = Population, color = Population, shape = Population, linetype = Population)) +
+  geom_point(aes(temp, rate, group = Population, color = Population), AllPopPoints, size = 3) + 
+  geom_line(aes(temp, .fitted), size = 1) +
+  theme_bw(base_size = 12) +
+  labs(x = 'Temperature (ºC)',
+       y = 'Development rate') +
+  font("xy", size = 15)+
+  font("x.text", size = 12)+
+  font("y.text", size = 12)+
+  font("legend.title", size= 15)+
+  font("legend.text", size = 12)+
+  ylim(-.01, .2)+
+  geom_hline(aes(yintercept = 0), linetype = 2)  + 
+  scale_color_manual(values = c("#1E88E5", "orange", "lime green"))+
+  scale_linetype_manual(values = c("solid", "dashed", "dotted"))
+
+AllRezende
+```
+
+```{r}
+ggsave("~/Desktop/GitHub/Pieris/Thesis/AllPopsPupalRezendeRearing.png", AllRezende, width = 8, height = 5)
+```
+
+
 

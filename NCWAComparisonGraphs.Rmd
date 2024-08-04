@@ -33,8 +33,8 @@ library(ggsurvfit)
 ```
 
 ```{r}
-comb <- read.csv("~/Desktop/GitHub/Pieris/PopulationCombData.csv", header = TRUE)
-NewComb <- read.csv("~/Desktop/GitHub/Pieris/NEWCombData.csv", header = TRUE)
+#comb <- read.csv("~/Desktop/GitHub/Pieris/PopulationCombData.csv", header = TRUE)
+NewComb <- read.csv("~/Desktop/GitHub/Pieris/LarvalCombData.csv", header = TRUE)
 NC2 <- read.csv("~/Desktop/GitHub/Pieris/NCLarval2023.csv", header= T)
 NC1 <- read.csv("~/Desktop/GitHub/Pieris/North_Carolina/NC_Larval_and_Realistic_Temps/Data/CleanedRound1.csv")
 ```
@@ -390,7 +390,7 @@ NCWACAsurv <- ggplot(data = survdata1, aes(x = Treatment, y = surv.perc, group =
   font("y.text", size = 12)+
   font("legend.title", size= 15)+
   font("legend.text", size = 12)+
-  labs(x = "Mean Rearing Temperature (°C)", y = "Proportion surviving to pupation", group = "Population", linetype = "Population", shape = "Population") +
+  labs(x = "Mean rearing temperature (°C)", y = "Proportion surviving to pupation", group = "Population", linetype = "Population", shape = "Population") +
   scale_linetype_manual(values = c("solid", "dashed", "dotted")) + 
   scale_shape_manual(values = c(19, 17, 15)) +
   scale_color_manual(values = c("#1E88E5", "orange", "lime green"))+
@@ -400,7 +400,7 @@ NCWACAsurv
 ```
 
 ```{r}
-ggsave("~/Desktop/GitHub/Pieris/Thesis/LarvalSurvival.png", NCWACAsurv, width = 8, height = 5)
+ggsave("~/Desktop/GitHub/Pieris/Thesis_Figures/LarvalSurvival.png", NCWACAsurv, width = 8, height = 5)
 ```
 
 ##3D. Time of death versus rearing temperature
@@ -425,7 +425,7 @@ CombTOD <- ggplot(data = TODmeans, aes(x = Treatment, y = Age.death, group = Pop
   theme_bw() + 
   geom_point(size=3.5) + 
   geom_line(size = 1.5) +
-  labs(x = "Mean temperature", y = "Average time to death (Days)", group = "Population", linetype = "Population", 
+  labs(x = "Mean rearing temperature (°C)", y = "Average time to death (days)", group = "Population", linetype = "Population", 
        shape = "Population")+ 
   font("xy", size = 15)+
   font("x.text", size = 12)+
